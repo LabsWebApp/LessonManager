@@ -8,9 +8,6 @@
         xmlns:local="clr-namespace:WpfApp"
         mc:Ignorable="d"
         Title="MainWindow" MinHeight="600" MinWidth="1024">
-    <Window.DataContext>
-        <vm:MainViewModel/>
-    </Window.DataContext>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -31,6 +28,8 @@
             <Label Grid.Row="4" HorizontalContentAlignment="Center" FontWeight="Bold">Курсы</Label>
             <controls:MainDataGrid Grid.Row="2"
                                    Margin="4,0,0,0"
+                                   SelectedItem="{Binding SelectedStudent}"
+                                   SelectionChanged="Grid_SelectionChanged"
                                    ItemsSource="{Binding Students, UpdateSourceTrigger=PropertyChanged}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="*"/>
@@ -66,9 +65,11 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="76"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Grid.Column="0" VerticalAlignment="Center" Text="">
+                <TextBox Grid.Column="0" VerticalAlignment="Center"
+                         Text="{Binding FindStudent, UpdateSourceTrigger=PropertyChanged}">
                 </TextBox>
-                <Button Grid.Column="1" Margin="4,4,0,4" Content="Искать" Height="18" VerticalAlignment="Top" FontSize="10"/>
+                <Button Grid.Column="1" Margin="4,4,0,4" Content="Искать" Height="18" VerticalAlignment="Top" FontSize="10"
+                        Command="{Binding StudentFindCommand}"/>
             </Grid>
             <Grid Grid.Row="5" Grid.Column="0">
                 <Grid.ColumnDefinitions>

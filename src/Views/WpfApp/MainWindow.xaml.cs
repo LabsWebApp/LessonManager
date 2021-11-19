@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
 using ViewModels;
 using WpfApp.Helpers;
 
@@ -12,6 +13,16 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        if (DataContext is MainViewModel viewModel) viewModel.ErrorHandler = new ErrorHandle();
+        DataContext = new MainViewModel(new ErrorHandle());
+    }
+
+    private void Grid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is DataGrid { SelectedIndex: >= 0 } grid) grid.ScrollIntoView(grid.SelectedItem);
+        //if (DataContext is MainViewModel model)
+        //{
+        //    model.AsyncSignUpCommand.RaiseCanExecuteChanged();
+        //    model.AsyncSignOutCommand.RaiseCanExecuteChanged();
+        //}
     }
 }

@@ -20,7 +20,7 @@ namespace ViewModelBase;
 public abstract class ViewModelBase : INotifyPropertyChanged
 {
     /// <summary>
-    /// Событие, возникающее при изменении ВСЕХ свойств, выбранных разработчиком.
+    /// Событие, возникающее при изменении ВСЕХ свойств, ВЫБРАННЫХ разработчиком.
     /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
 
