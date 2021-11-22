@@ -1,4 +1,4 @@
-﻿namespace ViewModelBase.Commands;
+﻿namespace ViewModelBase.Commands.ErrorHandlers;
 
 public interface IErrorCancelHandler : IErrorHandler
 {

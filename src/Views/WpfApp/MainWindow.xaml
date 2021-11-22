@@ -7,7 +7,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp"
         mc:Ignorable="d"
-        Title="MainWindow" MinHeight="600" MinWidth="1024">
+        Title="{Binding SelectedStudent}" 
+        MinHeight="600" MinWidth="1024">
+    <Window.Resources>
+        <SolidColorBrush 
+            Color="{Binding Source={x:Static SystemColors.ActiveBorderBrush}, Path=Color}" 
+            x:Key="{x:Static SystemColors.HighlightBrushKey}" />
+        <SolidColorBrush 
+            Color="{Binding Source={x:Static SystemColors.AppWorkspaceBrush}, Path=Color}"
+            x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" />
+    </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -29,7 +38,7 @@
             <controls:MainDataGrid Grid.Row="2"
                                    Margin="4,0,0,0"
                                    SelectedItem="{Binding SelectedStudent}"
-                                   SelectionChanged="Grid_SelectionChanged"
+                                   SelectionChanged="DataGrid_SelectionChanged"
                                    ItemsSource="{Binding Students, UpdateSourceTrigger=PropertyChanged}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="*"/>
@@ -42,7 +51,23 @@
                     </DataGridTextColumn>
                 </DataGrid.Columns>
             </controls:MainDataGrid>
-            <DataGrid Grid.Row="6" Margin="4,0,0,0"/>
+            <controls:MainDataGrid Grid.Row="6"
+                                   x:Name="CoursesGrid"
+                                   Margin="4,0,0,0"
+                                   SelectedItem="{Binding SelectedCourse, UpdateSourceTrigger=PropertyChanged}"
+                                   SelectionChanged="DataGrid_SelectionChanged"
+                                   ItemsSource="{Binding Courses, UpdateSourceTrigger=PropertyChanged}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="*"/>
+                    <DataGridTextColumn Header="Студентов на курсе" Binding="{Binding Students.Count}">
+                        <DataGridTextColumn.CellStyle>
+                            <Style>
+                                <Setter Property="TextBlock.TextAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn>
+                </DataGrid.Columns>
+            </controls:MainDataGrid>
             <Grid Grid.Row="1" Grid.Column="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -51,8 +76,16 @@
 
                 </Grid.ColumnDefinitions>
                 <Label Grid.Column="0" Content="Новый студент"/>
-                <TextBox Grid.Column="1" VerticalAlignment="Center" Text="{Binding NewStudent, UpdateSourceTrigger=PropertyChanged}">
-
+                <TextBox Grid.Column="1" VerticalAlignment="Center" 
+                         Text="{Binding NewStudent, UpdateSourceTrigger=PropertyChanged}">
+                    <TextBox.InputBindings>
+                        <KeyBinding 
+                            Key="Return" 
+                            Command="{Binding AsyncStudentCreateCommand}"/>
+                        <KeyBinding 
+                            Key="Enter" 
+                            Command="{Binding AsyncStudentCreateCommand}"/>
+                    </TextBox.InputBindings>
                 </TextBox>
                 <Button Grid.Column="2" Margin="4,4,0,4" 
                         Content="Добавить" Height="18" 
@@ -67,6 +100,14 @@
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0" VerticalAlignment="Center"
                          Text="{Binding FindStudent, UpdateSourceTrigger=PropertyChanged}">
+                    <TextBox.InputBindings>
+                        <KeyBinding 
+                            Key="Return" 
+                            Command="{Binding StudentFindCommand}"/>
+                        <KeyBinding 
+                            Key="Return" 
+                            Command="{Binding StudentFindCommand}"/>
+                    </TextBox.InputBindings>
                 </TextBox>
                 <Button Grid.Column="1" Margin="4,4,0,4" Content="Искать" Height="18" VerticalAlignment="Top" FontSize="10"
                         Command="{Binding StudentFindCommand}"/>
@@ -78,10 +119,19 @@
                     <ColumnDefinition Width="76"/>
                 </Grid.ColumnDefinitions>
                 <Label Grid.Column="0" Content="Новый курс"/>
-                <TextBox Grid.Column="1" VerticalAlignment="Center" Text="">
-
+                <TextBox Grid.Column="1" VerticalAlignment="Center" 
+                         Text="{Binding NewCourse, UpdateSourceTrigger=PropertyChanged}">
+                    <TextBox.InputBindings>
+                        <KeyBinding 
+                            Key="Return" 
+                            Command="{Binding AsyncCourseCreateCommand}"/>
+                        <KeyBinding 
+                            Key="Return" 
+                            Command="{Binding AsyncCourseCreateCommand}"/>
+                    </TextBox.InputBindings>
                 </TextBox>
-                <Button Grid.Column="2" Margin="4,4,0,4" Content="Создать" Height="18" VerticalAlignment="Top" FontSize="10"/>
+                <Button Grid.Column="2" Margin="4,4,0,4" Content="Создать" Height="18" VerticalAlignment="Top" FontSize="10"
+                        Command="{Binding AsyncCourseCreateCommand}"/>
             </Grid>
             <Grid Grid.Row="7" Grid.Column="0">
                 <Grid.ColumnDefinitions>
@@ -89,9 +139,19 @@
                     <ColumnDefinition Width="76"/>
                     <ColumnDefinition Width="76"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Grid.Column="0" VerticalAlignment="Center" Text="" Margin="4,0,0,0">
+                <TextBox Grid.Column="0" VerticalAlignment="Center" Margin="4,0,0,0"
+                         Text="{Binding FindCourse, UpdateSourceTrigger=PropertyChanged}">
+                    <TextBox.InputBindings>
+                        <KeyBinding 
+                            Key="Return" 
+                            Command="{Binding CourseFindCommand}"/>
+                        <KeyBinding 
+                            Key="Return" 
+                            Command="{Binding CourseFindCommand}"/>
+                    </TextBox.InputBindings>
                 </TextBox>
-                <Button Grid.Column="1" Margin="4,4,4,4" Content="Искать" Height="18" VerticalAlignment="Top" FontSize="10"/>
+                <Button Grid.Column="1" Margin="4,4,4,4" Content="Искать" Height="18" VerticalAlignment="Top" FontSize="10"
+                        Command="{Binding CourseFindCommand}"/>
                 <Button Grid.Column="2" Margin="4,4,0,4" Content="Удалить" Height="18" VerticalAlignment="Top" FontSize="10"/>
             </Grid>
 
@@ -114,15 +174,41 @@
                     <ColumnDefinition Width="76"/>
                     <ColumnDefinition Width="76"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Grid.Column="0" VerticalAlignment="Center" Text="" Margin="4,0,0,0"/>
+                <TextBox Grid.Column="0" VerticalAlignment="Bottom" Text="{Binding SelectedStudent.Name, UpdateSourceTrigger=PropertyChanged}" Margin="4,0,0,4"/>
                 <Button Grid.Column="1" Margin="4,4,4,4" Content="Имя" Height="18" VerticalAlignment="Top" FontSize="10"/>
                 <Button Grid.Column="2" Margin="4,4,4,4" Content="Удалить" Height="18" VerticalAlignment="Top" FontSize="10"/>
             </Grid>
-            <DataGrid Grid.Row="2" Margin="4,0,4,0"/>
+            <DataGrid Grid.Row="2" Margin="4,0,4,0" 
+                      x:Name="OutCoursesGrid"
+                      AllowDrop="True"
+                      IsReadOnly="True"
+                      AutoGenerateColumns="False" 
+                      ItemsSource="{Binding OutCourses, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedItem="{Binding ElementName=CoursesGrid, Path=SelectedItem, Mode=OneWay}"
+                      SelectionChanged="DataGrid_SelectionChanged">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Записать студента на курс(ы):" 
+                                        Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                        Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
             <Button Grid.Row="3" Width="76" Margin="0,4,0,4" Content="🠗" VerticalContentAlignment="Center" FontSize="11" />
-            <Label Grid.Row="4" HorizontalAlignment="Center">стрелками управляйте записью/отчислением студента в работе на/с курсах(ов)</Label>
+            <Label Grid.Row="4" HorizontalAlignment="Center">стрелками управляйте записью/отчислением студента в работе на/с курс(а)</Label>
             <Button Grid.Row="5" Width="76" Margin="0,4,0,4" Content="🠕" VerticalContentAlignment="Center" FontSize="11"/>
-            <DataGrid Grid.Row="6" Margin="4,0,4,0"/>
+            <DataGrid Grid.Row="6" Margin="4,0,4,0"
+                      x:Name="InCoursesGrid"
+                      AllowDrop="True"
+                      IsReadOnly="True"
+                      AutoGenerateColumns="False" 
+                      ItemsSource="{Binding InCourses, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedItem="{Binding ElementName=CoursesGrid, Path=SelectedItem, Mode=OneWay}"
+                      SelectionChanged="DataGrid_SelectionChanged" >
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Отчислить студента с курса(ов):" 
+                                        Binding="{Binding Name}"
+                                        Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
         </Grid>
     </Grid>
 </Window>

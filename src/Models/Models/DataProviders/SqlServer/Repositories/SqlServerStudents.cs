@@ -12,6 +12,8 @@ public class SqlServerStudents : IStudentsRep
 
     public void Add(Student student)
     {
+        if (_context.Students.FirstOrDefault(c => c.Name.ToLower() == student.Name.ToLower()) != default)
+            throw new ArgumentException("Такой студен уже существует.");
         if (student.Id == default)
         {
             _context.Add(student);
@@ -27,6 +29,8 @@ public class SqlServerStudents : IStudentsRep
     public Task AddAsync(Student student, CancellationToken cancellationToken = default) => 
         Task.Run(async () =>
     {
+        if (await _context.Students.FirstOrDefaultAsync(c => c.Name.ToLower() == student.Name.ToLower(), cancellationToken: cancellationToken) != default)
+            throw new ArgumentException("Такой студен уже существует.");
         if (student.Id == default)
         {
             await _context.AddAsync(student, cancellationToken);

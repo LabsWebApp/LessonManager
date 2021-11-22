@@ -12,6 +12,8 @@ public class SqlServerCourses : ICoursesRep
 
     public void Add(Course course)
     {
+        if (_context.Courses.FirstOrDefault(c => c.Name.ToLower() == course.Name.ToLower()) != default)
+            throw new ArgumentException("Такой курс уже есть.");
         if(course.Id == default)
         {
             _context.Add(course);
@@ -26,6 +28,8 @@ public class SqlServerCourses : ICoursesRep
     public Task AddAsync(Course course, CancellationToken cancellationToken = default) =>
         Task.Run(async () =>
         {
+            if (await _context.Courses.FirstOrDefaultAsync(c => c.Name.ToLower() == course.Name.ToLower(), cancellationToken: cancellationToken) != default)
+                throw new ArgumentException("Такой курс уже есть.");
             if (course.Id == default)
             {
                 await _context.AddAsync(course, cancellationToken);

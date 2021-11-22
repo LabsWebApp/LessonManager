@@ -5,19 +5,49 @@ using System.Text.RegularExpressions;
 using Models.DataProviders;
 using ViewModelBase.Commands;
 using ViewModelBase.Commands.AsyncCommands;
+using ViewModelBase.Commands.ErrorHandlers;
 using ViewModelBase.Commands.QuickCommands;
 
 namespace ViewModels;
 
 public class MainViewModel : ViewModelBase.ViewModelBase
 {
+    #region init
+    private readonly DataManager data;
     private const string PatternName = @"^[А-ЯЁ][а-яё]";
     private bool _isBusy;
-   // public IErrorHandler? ErrorHandler { private get; set; }
+
+    public ObservableCollection<Student> Students { get; set; }
+    public ObservableCollection<Course> Courses { get; set; }
+    public ObservableCollection<Course>? OutCourses { get; set; }
+    public ObservableCollection<Course>? InCourses { get; set; }
+
+    public MainViewModel(Provider provider, IErrorHandler errorHandler)
+    {
+        data = DataManager.Get(provider);
+        Students = new ObservableCollection<Student>(data.StudentsRep.Items);
+        Courses = new ObservableCollection<Course>(data.CoursesRep.Items);
+
+        AsyncStudentCreateCommand = new AsyncCommand(CreateStudentAsync, () => CanCreate(_newStudent), errorHandler);
+        AsyncCourseCreateCommand = new AsyncCommand(CreateCourseAsync, () => CanCreate(_newCourse), errorHandler);
+        StudentFindCommand = new Command(StudentFind,
+            () => Students.Any() && _findStudent.Trim().Length > 0, errorHandler);
+        CourseFindCommand = new Command(CourseFind,
+            () => Courses.Any() && _findCourse.Trim().Length > 0, errorHandler);
+    }
+    #endregion
+
+    #region create
+    private bool CanCreate(string name)
+    {
+        if (_isBusy) return false;
+        name = name.Trim();
+        return !string.IsNullOrEmpty(name) && Regex.IsMatch(name, PatternName);
+    }
+
     private string _newStudent = string.Empty;
     public string NewStudent
     {
-        private get => _newStudent;
         set
         {
             if (set(ref _newStudent, value))
@@ -25,72 +55,25 @@ public class MainViewModel : ViewModelBase.ViewModelBase
         }
     }
 
-    private string _findStudent = string.Empty;
-    public string FindStudent
+    private string _newCourse = string.Empty;
+    public string NewCourse
     {
-        private get => _findStudent;
         set
         {
-            if (set(ref _findStudent, value))
-                StudentFindCommand.RaiseCanExecuteChanged();
+            if (set(ref _newCourse, value))
+                AsyncCourseCreateCommand.RaiseCanExecuteChanged();
         }
     }
-
-    private Student? _selectedStudent;
-    public Student? SelectedStudent
-    {
-        private get => _selectedStudent;
-        set
-        {
-            if (set(ref _selectedStudent, value));
-        }
-    }
-
     public AsyncCommand AsyncStudentCreateCommand { get; }
-    public Command StudentFindCommand { get; }
-    public ObservableCollection<Student> Students { get; set; }
-    public ObservableCollection<Course> Courses { get; set; }
-    private readonly DataManager data;
-    public MainViewModel(IErrorHandler? errorHandler = null)
-    {
-        data = DataManager.Get(Provider.SqlServer);
-        Students = new ObservableCollection<Student>(data.StudentsRep.Items);
-        Courses = new ObservableCollection<Course>(data.CoursesRep.Items);
-
-        AsyncStudentCreateCommand = new AsyncCommand(CreateStudentAsync, CanCreateStudent, errorHandler);
-        StudentFindCommand = new Command(StudentFind, 
-            () => !_isBusy && FindStudent.Trim().Length > 0, errorHandler);
-    }
-
-    private void StudentFind()
-    {
-        var index = SelectedStudent is null ? 0 : Students.IndexOf(SelectedStudent);
-        var result = Students
-            .Skip(index + 1)
-            .Concat(Students.Take(index))
-            .FirstOrDefault(s => s.Name.ToLower().Contains(FindStudent.ToLower()));
-        if (result is null)
-            throw new Exception("Студент не найден");
-        SelectedStudent = result;
-    }
-
-    private bool CanCreateStudent()
-    {
-        if (_isBusy) return false;
-        return Regex.IsMatch(_newStudent, PatternName);
-    }
-
     private async Task CreateStudentAsync()
     {
         _isBusy = true;
         try
         {
-            if (Students.FirstOrDefault(s => string.Equals(s.Name, _newStudent, StringComparison.CurrentCultureIgnoreCase))
-                != default)
-                throw new Exception("Такой студент уже есть");
-            Student student = new() { Name = NewStudent };
+            Student student = new() { Name = _newStudent };
             await data.StudentsRep.AddAsync(student);
-            Students.Insert(0,student);
+            Students.Insert(0, student);
+            SelectedStudent = student;
             NewStudent = string.Empty;
         }
         finally
@@ -99,14 +82,104 @@ public class MainViewModel : ViewModelBase.ViewModelBase
         }
     }
 
-    private bool CanExecuteCreateStudent(string? student)
+    public AsyncCommand AsyncCourseCreateCommand { get; }
+    private async Task CreateCourseAsync()
     {
-        if (_isBusy) return false;
-        var res = student?.Trim();
-        if (string.IsNullOrWhiteSpace(res)) return false;
-        return Regex.IsMatch(res, PatternName);
+        _isBusy = true;
+        try
+        {
+            Course course = new() { Name = _newCourse };
+            await data.CoursesRep.AddAsync(course);
+            Courses.Insert(0, course);
+            SelectedCourse = course;
+            NewCourse = string.Empty;
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+    #endregion
+
+    #region find
+    private string _findStudent = string.Empty;
+    public string FindStudent
+    {
+        set
+        {
+            if (set(ref _findStudent, value))
+                StudentFindCommand.RaiseCanExecuteChanged();
+        }  
     }
 
-    #region Свойства
+    private string _findCourse = string.Empty;
+    public string FindCourse
+    {
+        set
+        {
+            if (set(ref _findCourse, value))
+                CourseFindCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public Command StudentFindCommand { get; }
+    public Command CourseFindCommand { get; }
+
+    private void StudentFind()
+    {
+        var index = _selectedStudent is null ? 0 : Students.IndexOf(_selectedStudent);
+        var result = Students
+            .Skip(index + 1)
+            .Union(Students.Take(index + 1))
+            .FirstOrDefault(s => s.Name.ToLower().Contains(_findStudent.ToLower()));
+        SelectedStudent = result ?? throw new ResultNotFoundException(_findStudent);
+    }
+    private void CourseFind()
+    {
+        var index = _selectedCourse is null ? 0 : Courses.IndexOf(_selectedCourse);
+        var result = Courses
+            .Skip(index + 1)
+            .Union(Courses.Take(index + 1))
+            .FirstOrDefault(s => s.Name.ToLower().Contains(_findCourse.ToLower()));
+        SelectedCourse = result ?? throw new ResultNotFoundException(_findCourse);
+    }
+    #endregion
+
+    #region selected
+    private Student? _selectedStudent;
+    public Student? SelectedStudent
+    {
+        get => _selectedStudent;
+        set
+        {
+            if (set(ref _selectedStudent, value))
+                SetInOutCourses();
+        }
+    }
+
+    private void SetInOutCourses()
+    {
+        InCourses = SelectedStudent is null
+            ? new ObservableCollection<Course>()
+            : new ObservableCollection<Course>(
+                data.CoursesRep.Items.Where(c => c.Students.Contains(SelectedStudent)));
+        OnPropertyChanged(nameof(InCourses));
+
+        OutCourses = SelectedStudent is null
+            ? new ObservableCollection<Course>(Courses)
+            : new ObservableCollection<Course>(
+                data.CoursesRep.Items.Where(c => !c.Students.Contains(SelectedStudent)));
+        OnPropertyChanged(nameof(OutCourses));
+    }
+
+    private Course? _selectedCourse;
+    public Course? SelectedCourse
+    {
+        get => _selectedCourse;
+        set
+        {
+            if (set(ref _selectedCourse, value)) ;
+        }
+    }
     #endregion
 }

@@ -39,15 +39,15 @@ public class DataManagerTests
         //arrange
         SqLiteDbContext context = new SqLiteDbContext();
         DataManager data = new DataManager(new SqLiteStudents(context), new SqLiteCourses(context));
-        var id = new Guid("B2825709-2E3D-43C1-BFAA-8D29F6C266E7");
+        var id = new Guid("B2825809-2E3D-43C1-BFAA-8D29F6C266E7");
         //act
-        //data.StudentsRep.Add(new Student { Name = "Vasya" });
-        //data.CoursesRep.Add(new Course { Name = "2 курс" });
+        data.StudentsRep.Add(new Student { Id = id, Name = "Vasya2" });
+        data.CoursesRep.Add(new Course { Name = "2 курс" });
         data.StudentsRep.SetCourse(
             data.StudentsRep.GetStudentById(id) ??
-            throw new Exception(),
+            throw new Exception("Студент есть"),
             data.CoursesRep.Items.FirstOrDefault(s => s.Name == "2 курс") ??
-            throw new Exception());
+            throw new Exception("Курс есть"));
         //assert
         Assert.IsNotNull(data.StudentsRep.Items.FirstOrDefault(s => s.Id == id)?.
             Courses.FirstOrDefault(s => s.Name == "2 курс"));

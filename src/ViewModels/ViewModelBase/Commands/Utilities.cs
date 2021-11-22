@@ -1,4 +1,6 @@
-﻿namespace ViewModelBase.Commands;
+﻿using ViewModelBase.Commands.ErrorHandlers;
+
+namespace ViewModelBase.Commands;
 
 public static class Utilities
 {
@@ -14,6 +16,12 @@ public static class Utilities
                 handlerWithCancel.HandleCancel(ex);
             else handler?.HandleError(ex);
         }
+        catch (ResultNotFoundException ex)
+        {
+            if (handler is IErrorNotFoundHandler handlerWithNotFound)
+                handlerWithNotFound.HandleResultNotFound(ex);
+            else handler?.HandleError(ex);
+        }
         catch (Exception ex)
         {
             handler?.HandleError(ex);
@@ -25,6 +33,12 @@ public static class Utilities
         try
         {
             action.Invoke();
+        }
+        catch (ResultNotFoundException ex)
+        {
+            if (handler is IErrorNotFoundHandler handlerWithNotFound)
+                handlerWithNotFound.HandleResultNotFound(ex);
+            else handler?.HandleError(ex);
         }
         catch (Exception ex)
         {

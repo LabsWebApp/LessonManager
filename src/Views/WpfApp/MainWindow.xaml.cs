@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using Models.DataProviders;
 using ViewModels;
 using WpfApp.Helpers;
 
@@ -13,10 +14,10 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        DataContext = new MainViewModel(new ErrorHandle());
+        DataContext = new MainViewModel(Provider.SqlServer, new ErrorHandle());
     }
 
-    private void Grid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is DataGrid { SelectedIndex: >= 0 } grid) grid.ScrollIntoView(grid.SelectedItem);
         //if (DataContext is MainViewModel model)
