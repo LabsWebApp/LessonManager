@@ -1,4 +1,4 @@
-﻿namespace ViewModels;
+﻿namespace ViewModels.Interfaces;
 
 public interface IRefreshable
 {

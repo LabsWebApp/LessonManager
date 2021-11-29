@@ -1,4 +1,5 @@
-﻿using Models;
+﻿using System.Collections;
+using Models;
 using Models.Entities;
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
@@ -7,26 +8,33 @@ using ViewModelBase.Commands;
 using ViewModelBase.Commands.AsyncCommands;
 using ViewModelBase.Commands.ErrorHandlers;
 using ViewModelBase.Commands.QuickCommands;
+using ViewModels.Interfaces;
 
 namespace ViewModels;
 
 public class MainViewModel : ViewModelBase.ViewModelBase
 {
     #region init
-    private readonly DataManager data;
+    private readonly DataManager _data;
     private const string PatternName = @"^[А-ЯЁ][а-яё]";
     private bool _isBusy;
+    private readonly IConfirmed _confirmed;
 
+    public IRefreshable? StudentsRefreshable { private get; set; } 
+    public IRefreshable? CoursesRefreshable { private get; set; } 
+    public IAdvancedSelectedItems? AdvancedInCourses { private get; set; } 
+    public IAdvancedSelectedItems? AdvancedOutCourses { private get; set; } 
     public ObservableCollection<Student> Students { get; set; }
     public ObservableCollection<Course> Courses { get; set; }
     public ObservableCollection<Course>? OutCourses { get; set; }
     public ObservableCollection<Course>? InCourses { get; set; }
 
-    public MainViewModel(Provider provider, IErrorHandler errorHandler)
+    public MainViewModel(Provider provider, IErrorHandler errorHandler, IConfirmed confirmed)
     {
-        data = DataManager.Get(provider);
-        Students = new ObservableCollection<Student>(data.StudentsRep.Items);
-        Courses = new ObservableCollection<Course>(data.CoursesRep.Items);
+        _confirmed = confirmed;
+        _data = DataManager.Get(provider);
+        Students = new ObservableCollection<Student>(_data.StudentsRep.Items);
+        Courses = new ObservableCollection<Course>(_data.CoursesRep.Items);
 
         AsyncStudentCreateCommand = new AsyncCommand(CreateStudentAsync, () => CanCreate(_newStudent), errorHandler);
         AsyncCourseCreateCommand = new AsyncCommand(CreateCourseAsync, () => CanCreate(_newCourse), errorHandler);
@@ -34,6 +42,17 @@ public class MainViewModel : ViewModelBase.ViewModelBase
             () => Students.Any() && _findStudent.Trim().Length > 0, errorHandler);
         CourseFindCommand = new Command(CourseFind,
             () => Courses.Any() && _findCourse.Trim().Length > 0, errorHandler);
+        AsyncStudentDeleteCommand = new AsyncCommand(StudentDeleteAsync, 
+            () => !_isBusy && SelectedStudent is not null,errorHandler);
+        AsyncCourseDeleteCommand = new AsyncCommand(CourseDeleteAsync,
+            () => !_isBusy && SelectedCourse is not null, errorHandler);
+        AsyncSetCoursesCommand = new AsyncCommand<IEnumerable?>(
+            SetCoursesAsync,
+            CanSetUnset, errorHandler);
+        AsyncUnsetCoursesCommand = new AsyncCommand<IEnumerable?>(
+            UnsetCourseAsync,
+            CanSetUnset,
+            errorHandler);
     }
     #endregion
 
@@ -61,7 +80,10 @@ public class MainViewModel : ViewModelBase.ViewModelBase
         set
         {
             if (set(ref _newCourse, value))
+            {
                 AsyncCourseCreateCommand.RaiseCanExecuteChanged();
+                SetInOutCourses();
+            }
         }
     }
     public AsyncCommand AsyncStudentCreateCommand { get; }
@@ -71,7 +93,7 @@ public class MainViewModel : ViewModelBase.ViewModelBase
         try
         {
             Student student = new() { Name = _newStudent };
-            await data.StudentsRep.AddAsync(student);
+            await _data.StudentsRep.AddAsync(student);
             Students.Insert(0, student);
             SelectedStudent = student;
             NewStudent = string.Empty;
@@ -89,7 +111,7 @@ public class MainViewModel : ViewModelBase.ViewModelBase
         try
         {
             Course course = new() { Name = _newCourse };
-            await data.CoursesRep.AddAsync(course);
+            await _data.CoursesRep.AddAsync(course);
             Courses.Insert(0, course);
             SelectedCourse = course;
             NewCourse = string.Empty;
@@ -145,6 +167,109 @@ public class MainViewModel : ViewModelBase.ViewModelBase
     }
     #endregion
 
+    #region delete
+    public AsyncCommand AsyncStudentDeleteCommand { get; }
+    public AsyncCommand AsyncCourseDeleteCommand { get; }
+
+    private async Task StudentDeleteAsync()
+    {
+        _isBusy = true;
+        try
+        {
+            if (_confirmed.Confirm($"Вы действительно хотите отчислит студента: {SelectedStudent?.Name}?"))
+                throw new OperationCanceledException("Отчисление отменено.");
+            if (SelectedStudent is not null)
+                await _data.StudentsRep.DeleteAsync(SelectedStudent.Id);
+            Students.Remove(SelectedStudent!);
+            SelectedStudent = null;
+            CoursesRefreshable?.Refresh();
+        }
+        finally
+        {
+            _isBusy = false;
+            SetInOutCourses();
+        }
+    }
+    private async Task CourseDeleteAsync()
+    {
+        _isBusy = true;
+        try
+        {
+            if (_confirmed.Confirm($"Вы действительно хотите удалить курс: \"{SelectedCourse?.Name}\"?"))
+                throw new OperationCanceledException("Удаление отменено.");
+            if (SelectedCourse is not null)
+                await _data.CoursesRep.DeleteAsync(SelectedCourse.Id);
+            Courses.Remove(SelectedCourse!);
+            SelectedCourse = null;
+            StudentsRefreshable?.Refresh();
+        }
+        finally
+        {
+            _isBusy = false;
+            SetInOutCourses();
+        }
+    }
+    #endregion
+
+    #region set
+    public AsyncCommand<IEnumerable?> AsyncSetCoursesCommand { get; }
+    public AsyncCommand<IEnumerable?> AsyncUnsetCoursesCommand { get; }
+
+    private bool CanSetUnset(IEnumerable? obj) =>
+        !_isBusy && (obj?.Cast<Course>().Any() ?? false);
+
+    private async Task SetCoursesAsync(IEnumerable? courses)
+    {
+        _isBusy = true;
+        try
+        {
+            _isBusy = true;
+            var items = courses as Course[] ?? 
+                        courses?.Cast<Course>().ToArray() ?? 
+                    throw new ArgumentNullException(nameof(courses));
+            foreach (var item in items)
+                await _data.StudentsRep.SetCourseAsync(SelectedStudent!, item);
+            
+            SetInOutCourses();
+            AdvancedOutCourses?.SelectItem();
+            AdvancedInCourses?.SelectItems(items);
+            StudentsRefreshable?.Refresh();
+            CoursesRefreshable?.Refresh();
+        }
+        finally
+        {
+            _isBusy = false;
+            AsyncSetCoursesCommand.RaiseCanExecuteChanged();
+            AsyncUnsetCoursesCommand.RaiseCanExecuteChanged();
+        }
+    }
+    private async Task UnsetCourseAsync(IEnumerable? courses)
+    {
+        _isBusy = true;
+        try
+        {
+            _isBusy = true;
+            var items = courses as Course[] ?? 
+                        courses?.Cast<Course>().ToArray() ??
+                throw new ArgumentNullException(nameof(courses));
+            foreach (var item in items)
+                await _data.StudentsRep.UnsetCourseAsync(SelectedStudent!, item);
+
+            SetInOutCourses();
+            AdvancedInCourses?.SelectItem();
+            AdvancedOutCourses?.SelectItems(items);
+            StudentsRefreshable?.Refresh();
+            CoursesRefreshable?.Refresh();
+        }
+        finally
+        {
+            _isBusy = false;
+            AsyncUnsetCoursesCommand.RaiseCanExecuteChanged();
+            AsyncSetCoursesCommand.RaiseCanExecuteChanged();
+        }
+    }
+    #endregion
+
     #region selected
     private Student? _selectedStudent;
     public Student? SelectedStudent
@@ -152,23 +277,31 @@ public class MainViewModel : ViewModelBase.ViewModelBase
         get => _selectedStudent;
         set
         {
-            if (set(ref _selectedStudent, value))
-                SetInOutCourses();
+            if (!set(ref _selectedStudent, value)) return;
+            SetInOutCourses();
+            if (SelectedCourse is not null)
+            {
+                AdvancedInCourses?.SelectItem(SelectedCourse);
+                AdvancedOutCourses?.SelectItem(SelectedCourse);
+            }
+            AsyncStudentDeleteCommand.RaiseCanExecuteChanged();
+            AsyncSetCoursesCommand.RaiseCanExecuteChanged();
+            AsyncSetCoursesCommand.RaiseCanExecuteChanged();
         }
     }
 
     private void SetInOutCourses()
     {
         InCourses = SelectedStudent is null
-            ? new ObservableCollection<Course>()
+            ? null
             : new ObservableCollection<Course>(
-                data.CoursesRep.Items.Where(c => c.Students.Contains(SelectedStudent)));
+                _data.CoursesRep.Items.Where(c => c.Students.Contains(SelectedStudent)));
         OnPropertyChanged(nameof(InCourses));
 
         OutCourses = SelectedStudent is null
-            ? new ObservableCollection<Course>(Courses)
+            ? null
             : new ObservableCollection<Course>(
-                data.CoursesRep.Items.Where(c => !c.Students.Contains(SelectedStudent)));
+                _data.CoursesRep.Items.Where(c => !c.Students.Contains(SelectedStudent)));
         OnPropertyChanged(nameof(OutCourses));
     }
 
@@ -178,8 +311,35 @@ public class MainViewModel : ViewModelBase.ViewModelBase
         get => _selectedCourse;
         set
         {
-            if (set(ref _selectedCourse, value)) ;
+            if (!set(ref _selectedCourse, value)) return;
+            AsyncCourseDeleteCommand.RaiseCanExecuteChanged();
+            if (value is not null)
+            {
+                AdvancedInCourses?.SelectItem(value);
+                AdvancedOutCourses?.SelectItem(value);
+            }
+            AsyncSetCoursesCommand.RaiseCanExecuteChanged();
+            AsyncSetCoursesCommand.RaiseCanExecuteChanged();
         }
     }
+    #endregion
+
+    #region weather
+    private byte[]? weatherImage;
+
+    public byte[] WeatherImage
+    {
+        get
+        {
+            //if (weatherImage is not null) return weatherImage;
+            //using var httpClient = new HttpClient();
+            //var url = $"http://openweathermap.org/img/wn/10d@2x.png";
+            //weatherImage = httpClient.GetByteArrayAsync(url).Result;
+
+            return weatherImage;
+        }
+    }
+
+
     #endregion
 }

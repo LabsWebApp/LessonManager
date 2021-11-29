@@ -13,5 +13,8 @@ public interface IStudentsRep
     Task<Student?> GetStudentByIdAsync(Guid id, CancellationToken cancellationToken = default);
     void SetCourse(Student student, Course course);
     Task SetCourseAsync(Student student, Course course, CancellationToken cancellationToken = default);
-        
+
+    void UnsetCourse(Student student, Course course);
+    Task UnsetCourseAsync(Student student, Course course, CancellationToken cancellationToken = default);
+
 }

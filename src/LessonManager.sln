@@ -5,13 +5,25 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ViewModelBase", "ViewModels\ViewModelBase\ViewModelBase.csproj", "{149D835B-6831-4A87-A0D4-C77D453A8DF8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Models", "Models\Models\Models.csproj", "{48847AF6-A6DA-433E-B9CD-8DDDF67B305B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Models", "Models\Models\Models.csproj", "{48847AF6-A6DA-433E-B9CD-8DDDF67B305B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModelsTests", "Models\ModelsTests\ModelsTests.csproj", "{D5EE77C8-C1F7-45D9-B507-F3EB2F7DC49F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ModelsTests", "Models\ModelsTests\ModelsTests.csproj", "{D5EE77C8-C1F7-45D9-B507-F3EB2F7DC49F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ViewModels", "ViewModels\ViewModels\ViewModels.csproj", "{AC933196-E235-4AFA-A0FC-9B0CAEFE164A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ViewModels", "ViewModels\ViewModels\ViewModels.csproj", "{AC933196-E235-4AFA-A0FC-9B0CAEFE164A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfApp", "Views\WpfApp\WpfApp.csproj", "{D174F8CC-51F1-4069-B78E-33DE1C1818A5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfApp", "Views\WpfApp\WpfApp.csproj", "{D174F8CC-51F1-4069-B78E-33DE1C1818A5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WeatherBonus", "WeatherBonus", "{90BDF6AE-F295-4D56-AEA1-2BD080362C51}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GetLocation", "WeatherBonus\GetLocation\GetLocation.csproj", "{1DCEAE31-50E8-4B2D-B9B4-37869F71A84D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BonusHelper", "WeatherBonus\BonusHelper\BonusHelper.csproj", "{DAFF05B4-271C-4A20-B979-D9FF19C6378F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiKeysData", "WeatherBonus\ApiKeysData\ApiKeysData.csproj", "{FC3567A5-E505-42EA-8A0E-57A20258631B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenWeatherMapApi", "WeatherBonus\OpenWeatherMapApi\OpenWeatherMapApi.csproj", "{3AB2E16C-4A67-4C91-81C6-D603041BD694}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenWeatherMapApiTests", "WeatherBonus\OpenWeatherMapApiTests\OpenWeatherMapApiTests.csproj", "{C9C66293-93AD-4E0D-AFB5-F94A5DE07AA4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,9 +51,36 @@ Global
 		{D174F8CC-51F1-4069-B78E-33DE1C1818A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D174F8CC-51F1-4069-B78E-33DE1C1818A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D174F8CC-51F1-4069-B78E-33DE1C1818A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DCEAE31-50E8-4B2D-B9B4-37869F71A84D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DCEAE31-50E8-4B2D-B9B4-37869F71A84D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DCEAE31-50E8-4B2D-B9B4-37869F71A84D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DCEAE31-50E8-4B2D-B9B4-37869F71A84D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DAFF05B4-271C-4A20-B979-D9FF19C6378F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DAFF05B4-271C-4A20-B979-D9FF19C6378F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DAFF05B4-271C-4A20-B979-D9FF19C6378F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DAFF05B4-271C-4A20-B979-D9FF19C6378F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC3567A5-E505-42EA-8A0E-57A20258631B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC3567A5-E505-42EA-8A0E-57A20258631B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC3567A5-E505-42EA-8A0E-57A20258631B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC3567A5-E505-42EA-8A0E-57A20258631B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AB2E16C-4A67-4C91-81C6-D603041BD694}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AB2E16C-4A67-4C91-81C6-D603041BD694}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AB2E16C-4A67-4C91-81C6-D603041BD694}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AB2E16C-4A67-4C91-81C6-D603041BD694}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9C66293-93AD-4E0D-AFB5-F94A5DE07AA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9C66293-93AD-4E0D-AFB5-F94A5DE07AA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9C66293-93AD-4E0D-AFB5-F94A5DE07AA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9C66293-93AD-4E0D-AFB5-F94A5DE07AA4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1DCEAE31-50E8-4B2D-B9B4-37869F71A84D} = {90BDF6AE-F295-4D56-AEA1-2BD080362C51}
+		{DAFF05B4-271C-4A20-B979-D9FF19C6378F} = {90BDF6AE-F295-4D56-AEA1-2BD080362C51}
+		{FC3567A5-E505-42EA-8A0E-57A20258631B} = {90BDF6AE-F295-4D56-AEA1-2BD080362C51}
+		{3AB2E16C-4A67-4C91-81C6-D603041BD694} = {90BDF6AE-F295-4D56-AEA1-2BD080362C51}
+		{C9C66293-93AD-4E0D-AFB5-F94A5DE07AA4} = {90BDF6AE-F295-4D56-AEA1-2BD080362C51}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7A6C4321-EC18-4C73-BE33-A4EF3190125B}

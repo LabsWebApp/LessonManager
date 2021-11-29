@@ -1,6 +1,4 @@
-﻿global using Microsoft.EntityFrameworkCore;
-
-namespace Models.DataProviders;
+﻿namespace Models.DataProviders;
 
 public static class Helper
 {

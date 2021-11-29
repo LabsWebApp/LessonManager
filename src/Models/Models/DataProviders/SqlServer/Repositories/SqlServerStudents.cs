@@ -21,7 +21,7 @@ public class SqlServerStudents : IStudentsRep
             return;
         }
         if (_context.Students.FirstOrDefault(s => s.Id == student.Id) is not null)
-            throw new ArgumentException();
+            return;
         _context.Add(student);
         _context.SaveChanges();
     }
@@ -39,7 +39,7 @@ public class SqlServerStudents : IStudentsRep
             return;
         }
         if (_context.Students.FirstOrDefault(s => s.Id == student.Id) is not null)
-            throw new ArgumentException();
+            return;
         await _context.AddAsync(student, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
         _context.RejectChanges(cancellationToken);
@@ -129,6 +129,24 @@ public class SqlServerStudents : IStudentsRep
             if (!_context.Courses.Contains(course)) throw new ArgumentException("Курс не создан");
             if (student.Courses.Contains(course)) return;
             student.Courses.Add(course);
+            await _context.SaveChangesAsync(cancellationToken);
+            _context.RejectChanges(cancellationToken);
+        }, cancellationToken);
+
+    public void UnsetCourse(Student student, Course course)
+    {
+        if (!_context.Courses.Contains(course)) throw new ArgumentException("Курс не создан");
+        if (!student.Courses.Contains(course)) return;
+        student.Courses.Remove(course);
+        _context.SaveChanges();
+    }
+
+    public Task UnsetCourseAsync(Student student, Course course, CancellationToken cancellationToken = default) =>
+        Task.Run(async () =>
+        {
+            if (!_context.Courses.Contains(course)) throw new ArgumentException("Курс не создан");
+            if (!student.Courses.Contains(course)) return;
+            student.Courses.Remove(course);
             await _context.SaveChangesAsync(cancellationToken);
             _context.RejectChanges(cancellationToken);
         }, cancellationToken);

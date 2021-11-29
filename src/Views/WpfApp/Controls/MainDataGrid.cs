@@ -1,5 +1,5 @@
 ﻿using System.Windows.Controls;
-using ViewModels;
+using ViewModels.Interfaces;
 
 namespace WpfApp.Controls;
 
@@ -10,7 +10,7 @@ public class MainDataGrid : DataGrid, IRefreshable
 {
     public MainDataGrid()
     {
-        SelectionMode = System.Windows.Controls.DataGridSelectionMode.Single;
+        SelectionMode = DataGridSelectionMode.Single;
         AutoGenerateColumns = false;
         IsReadOnly = true;
     }
