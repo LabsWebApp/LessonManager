@@ -1,4 +1,4 @@
-﻿namespace Models.DataProviders;
+﻿namespace Models.DataProviders.Helpers;
 
 public enum Provider
 {

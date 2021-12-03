@@ -7,7 +7,6 @@ namespace WpfApp.Controls
     public class AdvancedDataGrid : DataGrid, IAdvancedSelectedItems
     {
         public AdvancedDataGrid()
-            : base()
         {
             SelectionMode = DataGridSelectionMode.Extended;
             AutoGenerateColumns = false;
@@ -18,7 +17,9 @@ namespace WpfApp.Controls
         {
             SelectedIndex = -1;
             foreach (var item in items)
+            {
                 SelectedItems.Add(item);
+            }
         }
 
         public void SelectItem(object? item = null)

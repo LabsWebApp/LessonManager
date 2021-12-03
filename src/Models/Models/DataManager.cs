@@ -1,9 +1,7 @@
-﻿using Models.DataProviders;
-using Models.DataProviders.SqLite;
+﻿using Models.DataProviders.SqLite;
 using Models.DataProviders.SqLite.Repositories;
 using Models.DataProviders.SqlServer;
 using Models.DataProviders.SqlServer.Repositories;
-using Models.Repositories;
 
 namespace Models;
 

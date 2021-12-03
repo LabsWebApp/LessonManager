@@ -8,6 +8,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Models\Models\Models.csproj" />
+    <ProjectReference Include="..\..\WeatherBonus\ApiKeysData\ApiKeysData.csproj" />
+    <ProjectReference Include="..\..\WeatherBonus\GetLocation\GetLocation.csproj" />
+    <ProjectReference Include="..\..\WeatherBonus\OpenWeatherMapApi\OpenWeatherMapApi.csproj" />
     <ProjectReference Include="..\ViewModelBase\ViewModelBase.csproj" />
   </ItemGroup>
 

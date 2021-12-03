@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Windows.Controls;
-using Models.DataProviders;
+using Models.DataProviders.Helpers;
 using ViewModels;
 using WpfApp.Helpers;
 
@@ -15,7 +15,7 @@ public partial class MainWindow
     public MainWindow()
     {
         InitializeComponent();
-        _model = new MainViewModel(Provider.SqLite, new ErrorHandle(), new Confirmed())
+        _model = new MainViewModel(Provider.SqlServer, new ErrorHandle(), new Confirmed())
         {
             StudentsRefreshable = StudentsGrid,
             CoursesRefreshable = CoursesGrid,

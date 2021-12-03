@@ -25,17 +25,17 @@
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="26"/>
             </Grid.RowDefinitions>
-            <Label Grid.Row="0" HorizontalAlignment="Center" FontWeight="Bold">Студенты</Label>
+            <Label Grid.Row="0" HorizontalContentAlignment="Center" FontWeight="Bold">Студенты</Label>
             <Label Grid.Row="4" HorizontalContentAlignment="Center" FontWeight="Bold">Курсы</Label>
             <controls:MainDataGrid Grid.Row="2"
                                    x:Name="StudentsGrid"
                                    Margin="4,0,0,0"
-                                   SelectedItem="{Binding SelectedStudent}"
+                                   SelectedItem="{Binding SelectedProxyStudent, UpdateSourceTrigger=PropertyChanged}"
                                    SelectionChanged="DataGrid_SelectionChanged"
-                                   ItemsSource="{Binding Students, UpdateSourceTrigger=PropertyChanged}">
+                                   ItemsSource="{Binding ProxyStudents, UpdateSourceTrigger=PropertyChanged}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="*"/>
-                    <DataGridTextColumn Header="Посещает курс(ы)" Binding="{Binding Courses.Count}">
+                    <DataGridTextColumn Header="Посещает курс(ы)" Binding="{Binding Count}">
                         <DataGridTextColumn.CellStyle>
                             <Style>
                                 <Setter Property="TextBlock.TextAlignment" Value="Center"/>
@@ -47,12 +47,12 @@
             <controls:MainDataGrid Grid.Row="6"
                                    x:Name="CoursesGrid"
                                    Margin="4,0,0,0"
-                                   SelectedItem="{Binding SelectedCourse, UpdateSourceTrigger=PropertyChanged}"
+                                   SelectedItem="{Binding SelectedProxyCourse, UpdateSourceTrigger=PropertyChanged}"
                                    SelectionChanged="DataGrid_SelectionChanged"
-                                   ItemsSource="{Binding Courses, UpdateSourceTrigger=PropertyChanged}">
+                                   ItemsSource="{Binding ProxyCourses, UpdateSourceTrigger=PropertyChanged}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Курс" Binding="{Binding Name}" Width="*"/>
-                    <DataGridTextColumn Header="Студентов на курсе" Binding="{Binding Students.Count}">
+                    <DataGridTextColumn Header="Студентов на курсе" Binding="{Binding Count}">
                         <DataGridTextColumn.CellStyle>
                             <Style>
                                 <Setter Property="TextBlock.TextAlignment" Value="Center"/>
@@ -66,7 +66,6 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="76"/>
-
                 </Grid.ColumnDefinitions>
                 <Label Grid.Column="0" Content="Новый студент"/>
                 <TextBox Grid.Column="1" VerticalAlignment="Center" 
@@ -182,10 +181,27 @@
                     <ColumnDefinition Width="76"/>
                     <ColumnDefinition Width="76"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Grid.Column="0" VerticalAlignment="Bottom" Text="{Binding SelectedStudent.Name, UpdateSourceTrigger=PropertyChanged}" Margin="4,0,0,4"/>
-                <Button Grid.Column="1" Margin="4,4,0,4" 
+                <TextBox Grid.Column="0" 
+                         VerticalAlignment="Bottom" 
+                         Text="{Binding ChangingStudent, UpdateSourceTrigger=PropertyChanged}" 
+                         Margin="4,0,0,4">
+                    <TextBox.InputBindings>
+                        <KeyBinding 
+                            Key="Return" 
+                            Command="{Binding AsyncStudentNameChangeCommand}"
+                            CommandParameter="{Binding ChangingStudent}"/>
+                        <KeyBinding
+                            Key="Enter"
+                            Command="{Binding AsyncStudentNameChangeCommand}"
+                            CommandParameter="{Binding ChangingStudent}"/>
+                    </TextBox.InputBindings>
+                    </TextBox>
+                    <Button Grid.Column="1" Margin="4,4,0,4" 
                         Content="Имя" 
-                        Height="18" VerticalAlignment="Top" FontSize="10"/>
+                        Height="18" VerticalAlignment="Top" FontSize="10"
+                        Command="{Binding AsyncStudentNameChangeCommand}"
+                        CommandParameter="{Binding ChangingStudent}"
+                        ToolTip="Сменить имя"/>
                 <Button Grid.Column="2" 
                         Margin="4,4,0,4" 
                         Content="Удалить" Height="18" 
@@ -195,7 +211,7 @@
             <controls:AdvancedDataGrid Grid.Row="2" Margin="4,0,4,0" 
                       x:Name="OutCoursesGrid"
                       AllowDrop="True"
-                      ItemsSource="{Binding OutCourses, UpdateSourceTrigger=PropertyChanged}"
+                      ItemsSource="{Binding OutProxyCourses, UpdateSourceTrigger=PropertyChanged}"
                       SelectionChanged="DataGrid_SelectionChanged">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Записать студента на курс(ы):" 
@@ -221,7 +237,7 @@
             <controls:AdvancedDataGrid Grid.Row="6" Margin="4,0,4,0"
                                        x:Name="InCoursesGrid"
                                        AllowDrop="True"
-                                       ItemsSource="{Binding InCourses, UpdateSourceTrigger=PropertyChanged}"
+                                       ItemsSource="{Binding InProxyCourses, UpdateSourceTrigger=PropertyChanged}"
                                        SelectionChanged="DataGrid_SelectionChanged" >
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Отчислить студента с курса(ов):" 
@@ -229,8 +245,39 @@
                                         Width="*"/>
                 </DataGrid.Columns>
             </controls:AdvancedDataGrid>
-            <Image Grid.Row="7" 
-                   Source="{Binding WeatherImage}"/>
+            <Grid Grid.Row="7" Margin="0,0,4,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="72"/>
+                </Grid.ColumnDefinitions>
+                <Label Grid.Column="0" FontWeight="Bold" HorizontalAlignment="Center"
+                       Content="{Binding TimeString}"/>
+                <Image Grid.Column="1" 
+                       Source="{Binding WeatherImage}" 
+                       ToolTip="{Binding  WeatherToolTipsString}">
+                    <Image.InputBindings>
+                        <MouseBinding MouseAction="LeftDoubleClick" 
+                                      Command="{Binding AsyncRefreshBonusCommand}"/>
+                    </Image.InputBindings>
+                </Image>
+                <Label Grid.Column="2" FontWeight="Bold" Foreground="Navy"
+                       Content="{Binding WeatherString}"
+                       ToolTip="{Binding  WeatherToolTipsString}">
+                    <Label.InputBindings>
+                        <MouseBinding MouseAction="LeftDoubleClick" 
+                                      Command="{Binding AsyncRefreshBonusCommand}"/>
+                    </Label.InputBindings>
+                </Label>
+                <Button Grid.Column="3" 
+                        Margin="0,4,0,4" 
+                        Height="18" 
+                        VerticalAlignment="Top" FontSize="10"
+                        Content="{Binding ButtonText, UpdateSourceTrigger=PropertyChanged}"
+                        ToolTip="{Binding ButtonToolTip, UpdateSourceTrigger=PropertyChanged}"
+                        Command="{Binding BonusCommand}"/>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

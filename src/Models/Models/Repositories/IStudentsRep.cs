@@ -3,6 +3,7 @@
 public interface IStudentsRep
 {
     IQueryable<Student> Items { get; }
+    IQueryable<ProxyEntity> ProxyItems => Items.Select(s => new ProxyEntity(s));
     void Add(Student student);
     Task AddAsync(Student student, CancellationToken cancellationToken = default);
     void Delete(Guid id);
@@ -10,6 +11,7 @@ public interface IStudentsRep
     void Rename(Student student, string name);
     Task RenameAsync(Student student, string name, CancellationToken cancellationToken = default);
     Student? GetStudentById(Guid id);
+    Student? GetStudentByProxy(ProxyEntity proxy) => GetStudentById(proxy.Id);
     Task<Student?> GetStudentByIdAsync(Guid id, CancellationToken cancellationToken = default);
     void SetCourse(Student student, Course course);
     Task SetCourseAsync(Student student, Course course, CancellationToken cancellationToken = default);

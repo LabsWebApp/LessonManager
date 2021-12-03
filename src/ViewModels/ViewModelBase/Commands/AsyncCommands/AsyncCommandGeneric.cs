@@ -4,24 +4,24 @@ namespace ViewModelBase.Commands.AsyncCommands;
 
 public class AsyncCommand<T> : AsyncCommandBase, IAsyncCommand<T>
 {
-    private readonly Func<T?, CancellationToken?, Task> _execute;
+    private readonly Func<T?, CancellationToken, Task> _execute;
     private readonly Func<T?, bool>? _canExecute;
 
     public AsyncCommand(
-        Func<T?, CancellationToken?, Task> execute,
-        CancellationTokenSource? cancel = null,
+        Func<T?, CancellationToken, Task> execute,
         Func<T?, bool>? canExecute = null,
-        IErrorHandler? errorHandler = null)
-        : base(errorHandler, cancel, true)
+        IErrorHandler? errorHandler = null,
+        CancellationToken cancel = default)
+        : base(errorHandler, true, cancel)
     {
-        _execute = (p, _) => execute.Invoke(p, CancellationSource?.Token);
+        _execute = execute;
         _canExecute = canExecute;
     }
 
     public AsyncCommand(Func<T?, Task> execute,
         Func<T?, bool>? canExecute = null,
         IErrorHandler? errorHandler = null)
-        : base(errorHandler, null, false)
+        : base(errorHandler, false, CancellationToken.None)
     {
         _execute = (p, _) => execute.Invoke(p);
         _canExecute = canExecute;
@@ -30,7 +30,7 @@ public class AsyncCommand<T> : AsyncCommandBase, IAsyncCommand<T>
     public bool CanExecute(T? parameter) =>
         !IsExecuting &&
         (_canExecute?.Invoke(parameter) ?? true) &&
-        (!CancellationSource?.IsCancellationRequested ?? true);
+        !InnerCancellationToken.IsCancellationRequested;
 
     public async Task ExecuteAsync(T? parameter)
     {
@@ -39,7 +39,7 @@ public class AsyncCommand<T> : AsyncCommandBase, IAsyncCommand<T>
             try
             {
                 IsExecuting = true;
-                await _execute.Invoke(parameter, CancellationSource?.Token);
+                await _execute.Invoke(parameter, InnerCancellationToken);
             }
             finally
             {

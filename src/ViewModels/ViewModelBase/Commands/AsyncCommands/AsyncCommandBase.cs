@@ -1,48 +1,117 @@
 ﻿namespace ViewModelBase.Commands.AsyncCommands;
 
-public abstract class AsyncCommandBase
+public abstract class AsyncCommandBase : IDisposable
 {
     public event EventHandler? CanExecuteChanged;
 
-    protected bool IsExecuting;
+    protected bool IsExecuting { get; set; }
     protected readonly IErrorHandler? ErrorCancelHandler;
-    protected CancellationTokenSource? CancellationSource;
+    protected CancellationToken InnerCancellationToken { get; set; } = CancellationToken.None;
+    protected CancellationTokenSource? ProxyCancellationTokenSource;
+    private bool disposedValue;
 
     protected AsyncCommandBase(IErrorHandler? errorCancelHandler,
-        CancellationTokenSource? cancel, bool cancellationSupport)
+         bool cancellationSupport, CancellationToken cancelToken)
     {
         if (cancellationSupport)
-            CancellationSource = cancel ?? new CancellationTokenSource();
+        {
+            if (cancelToken == CancellationToken.None)
+            {
+                ProxyCancellationTokenSource = new CancellationTokenSource();
+                InnerCancellationToken = ProxyCancellationTokenSource.Token;
+            }
+            else InnerCancellationToken = cancelToken;
+        }
         ErrorCancelHandler = errorCancelHandler;
     }
 
     public void RaiseCanExecuteChanged() =>
         CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 
-    public bool IsNotCancelled =>
-        !CancellationSource?.IsCancellationRequested ??
-        throw new NotSupportedException("Данная команда не поддерживает отмену.");
-
-    private void CancelException()
+    public bool IsNotCancelled 
     {
-        if (CancellationSource is null)
+        get
+        {
+            CancelException();
+            return !InnerCancellationToken.IsCancellationRequested;
+        }
+    }
+
+    protected void CancelException()
+    {
+        if (InnerCancellationToken == CancellationToken.None)
             throw new NotSupportedException("Данная команда не поддерживает отмену.");
     }
 
     public void Cancel()
     {
         CancelException();
-        if (CancellationSource is { IsCancellationRequested: false })
+        if (ProxyCancellationTokenSource is null)
+            throw new TaskCanceledException("Управляйте отменой внешним ресурсом (CancellationTokenSource).");
+        if (ProxyCancellationTokenSource is { IsCancellationRequested: false })
+            ProxyCancellationTokenSource.Cancel();
+    }
+
+    public void ResetCancel()
+    {
+        CancelException();
+        switch (ProxyCancellationTokenSource)
         {
-            CancellationSource?.Cancel();
+            case null:
+                throw new TaskCanceledException(
+                    "Управляйте отменой внешним ресурсом (CancellationTokenSource).");
+            case { IsCancellationRequested: true }:
+                ProxyCancellationTokenSource.Dispose();
+                ProxyCancellationTokenSource = new();
+                break;
+        }
+
+        InnerCancellationToken = ProxyCancellationTokenSource.Token;
+    }
+
+    public void ResetCancel(ref CancellationTokenSource newCancellationTokenSource)
+    {
+        CancelException();
+        if (ProxyCancellationTokenSource is not null)
+        {
+            ProxyCancellationTokenSource.Dispose();
+            ProxyCancellationTokenSource = null;
+        }
+
+        if (newCancellationTokenSource is { IsCancellationRequested: true })
+        {
+            newCancellationTokenSource.Dispose();
+            newCancellationTokenSource = new();
+        }
+        InnerCancellationToken = newCancellationTokenSource.Token;
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                ProxyCancellationTokenSource?.Dispose();
+            }
+
+            // TODO: освободить неуправляемые ресурсы (неуправляемые объекты) и переопределить метод завершения
+            // TODO: установить значение NULL для больших полей
+            disposedValue = true;
         }
     }
 
-    public void ResetCancel(CancellationTokenSource? cancellationSource = null)
+    // // TODO: переопределить метод завершения, только если "Dispose(bool disposing)" содержит код для освобождения неуправляемых ресурсов
+    // ~AsyncCommandBase()
+    // {
+    //     // Не изменяйте этот код. Разместите код очистки в методе "Dispose(bool disposing)".
+    //     Dispose(disposing: false);
+    // }
+
+    public void Dispose()
     {
-        CancelException();
-        if (CancellationSource is { IsCancellationRequested: true })
-            cancellationSource = new();
-        CancellationSource = cancellationSource ?? new CancellationTokenSource();
+        // Не изменяйте этот код. Разместите код очистки в методе "Dispose(bool disposing)".
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }

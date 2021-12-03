@@ -18,8 +18,8 @@ public class DataManagerTests
     public void DataManager_CrudSqlServer_SuccessAllOperations()
     {
         //arrange
-        SqlSerDbContext context = new SqlSerDbContext();
-        DataManager data = new DataManager(new SqlServerStudents(context), new SqlServerCourses(context));
+        SqlSerDbContext context = new ();
+        DataManager data = new (new SqlServerStudents(context), new SqlServerCourses(context));
         //act
         data.StudentsRep.Add(new Student { Name = "Vasya" });
         data.CoursesRep.Add(new Course { Name = "2 курс" });
@@ -37,8 +37,8 @@ public class DataManagerTests
     public void DataManager_CrudSqLite_SuccessAllOperations()
     {
         //arrange
-        SqLiteDbContext context = new SqLiteDbContext();
-        DataManager data = new DataManager(new SqLiteStudents(context), new SqLiteCourses(context));
+        SqLiteDbContext context = new ();
+        DataManager data = new (new SqLiteStudents(context), new SqLiteCourses(context));
         var id = new Guid("B2825809-2E3D-43C1-BFAA-8D29F6C266E7");
         //act
         data.StudentsRep.Add(new Student { Id = id, Name = "Vasya2" });

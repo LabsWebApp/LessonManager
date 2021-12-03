@@ -1,4 +1,4 @@
-﻿namespace Models.DataProviders;
+﻿namespace Models.DataProviders.EfBase;
 
 public abstract class EfDbContext : DbContext
 {

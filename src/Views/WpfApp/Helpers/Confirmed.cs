@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using ViewModels;
 using ViewModels.Interfaces;
 
 namespace WpfApp.Helpers;
