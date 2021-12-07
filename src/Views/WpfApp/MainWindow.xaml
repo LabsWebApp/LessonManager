@@ -4,9 +4,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:behaviors="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:local="clr-namespace:WpfApp"
         mc:Ignorable="d"
-        Title="Студенты на кусах" 
+        Title="#################################"
         MinHeight="600" MinWidth="1024"
         Background="LightSkyBlue" >
     <Grid>
@@ -44,12 +45,12 @@
                     </DataGridTextColumn>
                 </DataGrid.Columns>
             </controls:MainDataGrid>
-            <controls:MainDataGrid Grid.Row="6"
+            <controls:MainDataGrid Grid.Row="5"
                                    x:Name="CoursesGrid"
-                                   Margin="4,0,0,0"
-                                   SelectedItem="{Binding SelectedProxyCourse, UpdateSourceTrigger=PropertyChanged}"
+                                   Margin="4,26,0,0"
                                    SelectionChanged="DataGrid_SelectionChanged"
-                                   ItemsSource="{Binding ProxyCourses, UpdateSourceTrigger=PropertyChanged}">
+                                   EnableRowVirtualization="True"
+                                   ItemsSource="{Binding ProxyCourses, UpdateSourceTrigger=PropertyChanged}" Height="210" Grid.RowSpan="2" VerticalAlignment="Top">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Курс" Binding="{Binding Name}" Width="*"/>
                     <DataGridTextColumn Header="Студентов на курсе" Binding="{Binding Count}">
@@ -60,6 +61,12 @@
                         </DataGridTextColumn.CellStyle>
                     </DataGridTextColumn>
                 </DataGrid.Columns>
+                <DataGrid.Resources>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="IsSelected"
+                                Value="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Style>
+                </DataGrid.Resources>
             </controls:MainDataGrid>
             <Grid Grid.Row="1" Grid.Column="0">
                 <Grid.ColumnDefinitions>
@@ -195,8 +202,8 @@
                             Command="{Binding AsyncStudentNameChangeCommand}"
                             CommandParameter="{Binding ChangingStudent}"/>
                     </TextBox.InputBindings>
-                    </TextBox>
-                    <Button Grid.Column="1" Margin="4,4,0,4" 
+                </TextBox>
+                <Button Grid.Column="1" Margin="4,4,0,4" 
                         Content="Имя" 
                         Height="18" VerticalAlignment="Top" FontSize="10"
                         Command="{Binding AsyncStudentNameChangeCommand}"

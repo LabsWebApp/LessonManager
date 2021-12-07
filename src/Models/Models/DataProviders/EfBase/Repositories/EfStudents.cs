@@ -20,8 +20,7 @@ public abstract class EfStudents : EfDisposable, IStudentsRep
         Context.SaveChanges();
     }
 
-    public Task AddAsync(Student student, CancellationToken cancellationToken = default) => 
-        Task.Run(async () =>
+    public async Task AddAsync(Student student, CancellationToken cancellationToken = default)
     {
         if (student.Id == default)
         {
@@ -35,7 +34,7 @@ public abstract class EfStudents : EfDisposable, IStudentsRep
         await Context.AddAsync(student, cancellationToken);
         await Context.SaveChangesAsync(cancellationToken);
         Context.RejectChanges(cancellationToken);
-    }, cancellationToken);
+    }
 
     public void Delete(Guid id)
     {
@@ -51,32 +50,31 @@ public abstract class EfStudents : EfDisposable, IStudentsRep
         Context.SaveChanges();
     }
 
-    public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default) =>
-        Task.Run(async () =>
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var result = await Context
+            .Students
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        if (result == default) return;
+        var courses = Context
+            .Courses
+            .Where(s => s.Students.Contains(result));
+        foreach (var item in courses)
         {
-            var result = await Context
-                .Students
-                .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
-            if (result == default) return;
-            var courses = Context
-                .Courses
-                .Where(s => s.Students.Contains(result));
-            foreach (var item in courses)
-            {
-                if (!cancellationToken.IsCancellationRequested)
-                    item.Students.Remove(result);
-                else
-                    break;
-            }
+            if (!cancellationToken.IsCancellationRequested)
+                item.Students.Remove(result);
+            else
+                break;
+        }
 
-            if (Context.RejectChanges(cancellationToken) > 0) return;
+        if (Context.RejectChanges(cancellationToken) > 0) return;
 
-            Context.Remove(result);
-            await Context.SaveChangesAsync(cancellationToken);
-            Context.RejectChanges(cancellationToken);
-        }, cancellationToken);
+        Context.Remove(result);
+        await Context.SaveChangesAsync(cancellationToken);
+        Context.RejectChanges(cancellationToken);
+    }
 
-    public void Rename(Student student, string name)
+    public Student? Rename(Student student, string name)
     {
         var result = Context.Students.FirstOrDefault(s => s.Id == student.Id);
         if (result == null) throw new ArgumentException("Такого студента не существует");
@@ -85,21 +83,25 @@ public abstract class EfStudents : EfDisposable, IStudentsRep
             student.Name = name;
             Context.Update(student);
             Context.SaveChanges();
+            return student;
         }
+
+        return null;
     }
-    public Task RenameAsync(Student student, string name, CancellationToken cancellationToken = default) =>
-        Task.Run(async () =>
+    public async Task<Student?> RenameAsync(Student student, string name, CancellationToken cancellationToken = default)
+    {
+        var result = await Context.Students.FirstOrDefaultAsync(s => s.Id == student.Id, cancellationToken);
+        if (result == null) return null;
+        if (student.Name != name)
         {
-            var result = await Context.Students.FirstOrDefaultAsync(s => s.Id == student.Id,cancellationToken);
-            if (result == null) return;
-            if (student.Name != name)
-            {
-                student.Name = name;
-                Context.Update(student);
-                await Context.SaveChangesAsync(cancellationToken);
-                Context.RejectChanges(cancellationToken);
-            }
-        }, cancellationToken);
+            student.Name = name;
+            Context.Update(student);
+            await Context.SaveChangesAsync(cancellationToken);
+            Context.RejectChanges(cancellationToken);
+            return result;
+        }
+        return null;
+    }
 
     public Student? GetStudentById(Guid id) =>
         Context.Students.FirstOrDefault(s => s.Id == id);
@@ -115,15 +117,14 @@ public abstract class EfStudents : EfDisposable, IStudentsRep
         Context.SaveChanges();
     }
 
-    public Task SetCourseAsync(Student student, Course course, CancellationToken cancellationToken = default) =>
-        Task.Run(async () =>
-        {
-            if (!Context.Courses.Contains(course)) throw new ArgumentException("Курс не создан");
-            if (student.Courses.Contains(course)) return;
-            student.Courses.Add(course);
-            await Context.SaveChangesAsync(cancellationToken);
-            Context.RejectChanges(cancellationToken);
-        }, cancellationToken);
+    public async Task SetCourseAsync(Student student, Course course, CancellationToken cancellationToken = default)
+    {
+        if (!Context.Courses.Contains(course)) throw new ArgumentException("Курс не создан");
+        if (student.Courses.Contains(course)) return;
+        student.Courses.Add(course);
+        await Context.SaveChangesAsync(cancellationToken);
+        Context.RejectChanges(cancellationToken);
+    }
 
     public void UnsetCourse(Student student, Course course)
     {
@@ -133,13 +134,12 @@ public abstract class EfStudents : EfDisposable, IStudentsRep
         Context.SaveChanges();
     }
 
-    public Task UnsetCourseAsync(Student student, Course course, CancellationToken cancellationToken = default) =>
-        Task.Run(async () =>
-        {
-            if (!Context.Courses.Contains(course)) throw new ArgumentException("Курс не создан");
-            if (!student.Courses.Contains(course)) return;
-            student.Courses.Remove(course);
-            await Context.SaveChangesAsync(cancellationToken);
-            Context.RejectChanges(cancellationToken);
-        }, cancellationToken);
+    public async Task UnsetCourseAsync(Student student, Course course, CancellationToken cancellationToken = default)
+    {
+        if (!Context.Courses.Contains(course)) throw new ArgumentException("Курс не создан");
+        if (!student.Courses.Contains(course)) return;
+        student.Courses.Remove(course);
+        await Context.SaveChangesAsync(cancellationToken);
+        Context.RejectChanges(cancellationToken);
+    }
 }

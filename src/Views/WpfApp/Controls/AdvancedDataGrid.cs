@@ -18,7 +18,7 @@ namespace WpfApp.Controls
             SelectedIndex = -1;
             foreach (var item in items)
             {
-                SelectedItems.Add(item);
+                SelectItem(item);
             }
         }
 
@@ -29,7 +29,6 @@ namespace WpfApp.Controls
                 SelectedIndex = -1;
                 return;
             }
-            if(!Items.Contains(item) || SelectedItems.Contains(item)) return;
             SelectedItems.Add(item);
         }
     }

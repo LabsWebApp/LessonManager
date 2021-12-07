@@ -17,8 +17,8 @@ public partial class MainWindow
         InitializeComponent();
         _model = new MainViewModel(Provider.SqlServer, new ErrorHandle(), new Confirmed())
         {
-            StudentsRefreshable = StudentsGrid,
-            CoursesRefreshable = CoursesGrid,
+            //StudentsRefreshable = StudentsGrid,
+            //CoursesRefreshable = CoursesGrid,
             AdvancedInCourses = InCoursesGrid,
             AdvancedOutCourses = OutCoursesGrid
         };

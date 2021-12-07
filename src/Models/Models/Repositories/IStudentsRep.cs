@@ -1,15 +1,17 @@
-﻿namespace Models.Repositories;
+﻿using Models.Entities.Proxies;
+
+namespace Models.Repositories;
 
 public interface IStudentsRep
 {
     IQueryable<Student> Items { get; }
-    IQueryable<ProxyEntity> ProxyItems => Items.Select(s => new ProxyEntity(s));
+    IQueryable<ProxyEntity> ProxyItems => Items.Select(s => new ProxyStudent(s));
     void Add(Student student);
     Task AddAsync(Student student, CancellationToken cancellationToken = default);
     void Delete(Guid id);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
-    void Rename(Student student, string name);
-    Task RenameAsync(Student student, string name, CancellationToken cancellationToken = default);
+    Student? Rename(Student student, string name);
+    Task<Student?> RenameAsync(Student student, string name, CancellationToken cancellationToken = default);
     Student? GetStudentById(Guid id);
     Student? GetStudentByProxy(ProxyEntity proxy) => GetStudentById(proxy.Id);
     Task<Student?> GetStudentByIdAsync(Guid id, CancellationToken cancellationToken = default);

@@ -1,9 +1,11 @@
-﻿namespace Models.Repositories;
+﻿using Models.Entities.Proxies;
+
+namespace Models.Repositories;
 
 public interface ICoursesRep
 {
     IQueryable<Course> Items { get; }
-    IQueryable<ProxyEntity> ProxyItems => Items.Select(c => new ProxyEntity(c));
+    IQueryable<ProxyCourse> ProxyItems => Items.Select(c => new ProxyCourse(c));
     void Add(Course course);
     Task AddAsync(Course course, CancellationToken cancellationToken = default);
     void Delete(Guid id);

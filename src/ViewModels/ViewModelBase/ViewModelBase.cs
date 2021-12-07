@@ -44,7 +44,7 @@ public abstract class ViewModelBase : INotifyPropertyChanged
     /// <param name="value">новое значение</param>
     /// <param name="propertyName">имя свойства, по умолчанию null - определит самостоятельно</param>
     /// <returns>true/false, если свойство (/не)изменилось</returns>
-    protected virtual bool set<T>(ref T field, T value,
+    protected virtual bool Set<T>(ref T field, T value,
         [CallerMemberName] string? propertyName = null)
     {
         if (Equals(field, value)) return false;
