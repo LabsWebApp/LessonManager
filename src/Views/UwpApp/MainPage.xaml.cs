@@ -49,7 +49,8 @@ namespace UwpApp
 
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
-            Windows.ApplicationModel.Core.CoreApplication.GetCurrentView().TitleBar.ExtendViewIntoTitleBar = true;
+            Windows.ApplicationModel.Core.CoreApplication.GetCurrentView()
+                .TitleBar.ExtendViewIntoTitleBar = true;
             Window.Current.SetTitleBar(CustomTitleBar);
             Window.Current.SizeChanged += Current_SizeChanged;
             FullScreenButton.Click += FullScreenButton_Click;

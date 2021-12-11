@@ -8,7 +8,6 @@ public abstract class AsyncCommandBase : IDisposable
     protected readonly IErrorHandler? ErrorCancelHandler;
     protected CancellationToken InnerCancellationToken { get; set; } = CancellationToken.None;
     protected CancellationTokenSource? ProxyCancellationTokenSource;
-    private bool disposedValue;
 
     protected AsyncCommandBase(IErrorHandler? errorCancelHandler,
          bool cancellationSupport, CancellationToken cancelToken)
@@ -86,9 +85,15 @@ public abstract class AsyncCommandBase : IDisposable
         InnerCancellationToken = newCancellationTokenSource.Token;
     }
 
+    #region MyRegion
+
+    
+
+    #endregion
+    private bool _disposedValue;
     protected virtual void Dispose(bool disposing)
     {
-        if (!disposedValue)
+        if (!_disposedValue)
         {
             if (disposing)
             {
@@ -97,7 +102,7 @@ public abstract class AsyncCommandBase : IDisposable
 
             // TODO: освободить неуправляемые ресурсы (неуправляемые объекты) и переопределить метод завершения
             // TODO: установить значение NULL для больших полей
-            disposedValue = true;
+            _disposedValue = true;
         }
     }
 

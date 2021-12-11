@@ -7,9 +7,9 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="48"/>
+            <RowDefinition Height="32"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid>
@@ -20,7 +20,7 @@
             <Grid Grid.Column="1" Background="LightBlue" x:Name="CustomTitleBar">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock VerticalAlignment="Center" Margin="10,0,0,0">Студенты на курсах</TextBlock>
-                    <Image Margin="20,4,0,4" Source="/Assets/Logo.png" />
+                    <Image Margin="16,4,0,4" Source="/Assets/Logo24.png" />
                 </StackPanel>
             </Grid>
             <Button Grid.Column ="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Name="FullScreenButton"

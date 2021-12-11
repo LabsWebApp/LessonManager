@@ -39,11 +39,9 @@ namespace UwpApp
         /// <param name="e">Сведения о запросе и обработке запуска.</param>
         protected override void OnLaunched(LaunchActivatedEventArgs e)
         {
-            Frame rootFrame = Window.Current.Content as Frame;
-
             // Не повторяйте инициализацию приложения, если в окне уже имеется содержимое,
             // только обеспечьте активность окна
-            if (rootFrame == null)
+            if (!(Window.Current.Content is Frame rootFrame))
             {
                 // Создание фрейма, который станет контекстом навигации, и переход к первой странице
                 rootFrame = new Frame();
