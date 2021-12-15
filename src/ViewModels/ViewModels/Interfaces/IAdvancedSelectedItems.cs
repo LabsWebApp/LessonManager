@@ -1,8 +1,9 @@
-﻿namespace ViewModels.Interfaces
+﻿using Models.Entities.Proxies;
+
+namespace ViewModels.Interfaces;
+
+public interface IAdvancedSelectedItems<T> 
 {
-    public interface IAdvancedSelectedItems : IRefreshable
-    {
-        void SelectItems(IEnumerable<object> items);
-        void SelectItem(object? item = null);
-    }
+    void SelectItems(IList<T> items);
+    void SelectItem(T? item = default);
 }

@@ -1,35 +1,35 @@
 ﻿using System.Collections.Generic;
 using System.Windows.Controls;
+using Models.Entities.Proxies;
 using ViewModels.Interfaces;
 
-namespace WpfApp.Controls
+namespace WpfApp.Controls;
+
+public class AdvancedDataGrid : DataGrid, IAdvancedSelectedItems<ProxyCourse>
 {
-    public class AdvancedDataGrid : DataGrid, IAdvancedSelectedItems
+    public AdvancedDataGrid()
     {
-        public AdvancedDataGrid()
+        SelectionMode = DataGridSelectionMode.Extended;
+        AutoGenerateColumns = false;
+        IsReadOnly = true;
+    }
+
+    public void SelectItems(IList<ProxyCourse> items)
+    {
+        SelectedIndex = -1;
+        foreach (var item in items)
         {
-            SelectionMode = DataGridSelectionMode.Extended;
-            AutoGenerateColumns = false;
-            IsReadOnly = true;
+            SelectItem(item);
         }
-        public void Refresh() => Items.Refresh();
-        public void SelectItems(IEnumerable<object> items)
+    }
+
+    public void SelectItem(ProxyCourse? item = default)
+    {
+        if (item is null)
         {
             SelectedIndex = -1;
-            foreach (var item in items)
-            {
-                SelectItem(item);
-            }
+            return;
         }
-
-        public void SelectItem(object? item = null)
-        {
-            if (item is null)
-            {
-                SelectedIndex = -1;
-                return;
-            }
-            SelectedItems.Add(item);
-        }
+        if (Items.Contains(item)) SelectedItems.Add(item);
     }
 }

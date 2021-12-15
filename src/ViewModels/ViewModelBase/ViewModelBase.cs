@@ -49,7 +49,7 @@ public abstract class ViewModelBase : INotifyPropertyChanged
     {
         if (Equals(field, value)) return false;
         field = value;
-        OnPropertyChanged(propertyName);
+        OnPropertyChanged();
         return true;
     }
 }

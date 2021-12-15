@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Windows.Input;
 using System.Windows.Controls;
 using Models.DataProviders.Helpers;
+using Models.Entities.Proxies;
 using ViewModels;
+using ViewModels.Interfaces;
+using WpfApp.Controls;
 using WpfApp.Helpers;
 
 namespace WpfApp;
@@ -15,10 +19,8 @@ public partial class MainWindow
     public MainWindow()
     {
         InitializeComponent();
-        _model = new MainViewModel(Provider.SqlServer, new ErrorHandle(), new Confirmed())
+        _model = new MainViewModel(Provider.SqLite, new ErrorHandle(), new Confirmed())
         {
-            //StudentsRefreshable = StudentsGrid,
-            //CoursesRefreshable = CoursesGrid,
             AdvancedInCourses = InCoursesGrid,
             AdvancedOutCourses = OutCoursesGrid
         };
@@ -29,23 +31,30 @@ public partial class MainWindow
     private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         var grid = sender as DataGrid ?? throw new Exception();
-        if (grid.SelectedIndex >= 0) grid.ScrollIntoView(grid.SelectedItem);
+        if (e.AddedItems.Count == 0) return;
+        grid.ScrollIntoView(e.AddedItems[^1]!);
 
         if (grid.Name == "StudentsGrid") return;
         _model.AsyncSetCoursesCommand.RaiseCanExecuteChanged();
         _model.AsyncUnsetCoursesCommand.RaiseCanExecuteChanged();
+    }
 
-        //if (grid.Name != "CoursesGrid") return;
-        //if (InCoursesGrid.SelectedItems.Count == 1 &&
-        //    !InCoursesGrid.SelectedItems.Contains(CoursesGrid.SelectedItem))
-        //{
-        //    InCoursesGrid.SelectedIndex = -1;
-        //    OutCoursesGrid.SelectedItems.Add(CoursesGrid.SelectedItem);
-        //}
-
-        //if (OutCoursesGrid.SelectedItems.Count != 1 ||
-        //    OutCoursesGrid.SelectedItems.Contains(CoursesGrid.SelectedItem)) return;
-        //OutCoursesGrid.SelectedIndex = -1;
-        //InCoursesGrid.SelectedItems.Add(CoursesGrid.SelectedItem);
+    private void InOutCoursesGrid_MouseUp(object sender, MouseButtonEventArgs e)
+    {
+        var grid = (AdvancedDataGrid)sender ?? throw new Exception();
+        foreach (var item in grid.Items)
+        {
+            if (item is not ProxyCourse proxy) continue;
+            if (grid.SelectedItems.Contains(proxy))
+            {
+                if (!_model.SelectedProxyCourses.Contains(proxy))
+                    _model.SelectedProxyCourses.Add(proxy);
+            }
+            else
+            {
+                if (_model.SelectedProxyCourses.Contains(proxy))
+                    _model.SelectedProxyCourses.Remove(proxy);
+            }
+        }
     }
 }

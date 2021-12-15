@@ -1,6 +1,8 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
+using System.Text;
+using Models.DataProviders.Helpers;
 using Models.DataProviders.SqLite;
 using Models.DataProviders.SqLite.Repositories;
 using Models.DataProviders.SqlServer;
@@ -13,23 +15,23 @@ namespace Models.Tests;
 public class DataManagerTests
 {
     public TestContext TestContext { get; set; } = null!;
+    private readonly Random _r = new (DateTime.Now.Millisecond);
 
     [TestMethod()]
     public void DataManager_CrudSqlServer_SuccessAllOperations()
     {
         //arrange
-        SqlSerDbContext context = new ();
-        DataManager data = new (new SqlServerStudents(context), new SqlServerCourses(context));
+        var (studentsRep, coursesRep, _) = DataManager.Get(Provider.SqlServer);
         //act
-        data.StudentsRep.Add(new Student { Name = "Vasya" });
-        data.CoursesRep.Add(new Course { Name = "2 курс" });
-        data.StudentsRep.SetCourse(
-            data.StudentsRep.Items.FirstOrDefault(s => s.Name == "Vasya") ?? 
+        studentsRep.Add(new Student { Name = "Vasya" });
+        coursesRep.Add(new Course { Name = "2 курс" });
+        studentsRep.SetCourse(
+            studentsRep.Items.FirstOrDefault(s => s.Name == "Vasya") ?? 
             throw new Exception(),
-            data.CoursesRep.Items.FirstOrDefault(s => s.Name == "2 курс") ??
+            coursesRep.Items.FirstOrDefault(s => s.Name == "2 курс") ??
             throw new Exception());
         //assert
-        Assert.IsNotNull(data.StudentsRep.Items.FirstOrDefault(s => s.Name == "Vasya")?.
+        Assert.IsNotNull(studentsRep.Items.FirstOrDefault(s => s.Name == "Vasya")?.
             Courses.FirstOrDefault(s => s.Name == "2 курс"));
     }
 
@@ -37,19 +39,112 @@ public class DataManagerTests
     public void DataManager_CrudSqLite_SuccessAllOperations()
     {
         //arrange
-        SqLiteDbContext context = new ();
-        DataManager data = new (new SqLiteStudents(context), new SqLiteCourses(context));
+        var (studentsRep, coursesRep, _) = DataManager.Get(Provider.SqLite); 
         var id = new Guid("B2825809-2E3D-43C1-BFAA-8D29F6C266E7");
         //act
-        data.StudentsRep.Add(new Student { Id = id, Name = "Vasya2" });
-        data.CoursesRep.Add(new Course { Name = "2 курс" });
-        data.StudentsRep.SetCourse(
-            data.StudentsRep.GetStudentById(id) ??
+        studentsRep.Add(new Student { Id = id, Name = "Vasya2" });
+        coursesRep.Add(new Course { Name = "2 курс" });
+        studentsRep.SetCourse(
+            studentsRep.GetStudentById(id) ??
             throw new Exception("Студент есть"),
-            data.CoursesRep.Items.FirstOrDefault(s => s.Name == "2 курс") ??
+            coursesRep.Items.FirstOrDefault(s => s.Name == "2 курс") ??
             throw new Exception("Курс есть"));
         //assert
-        Assert.IsNotNull(data.StudentsRep.Items.FirstOrDefault(s => s.Id == id)?.
+        Assert.IsNotNull(studentsRep.Items.FirstOrDefault(s => s.Id == id)?.
             Courses.FirstOrDefault(s => s.Name == "2 курс"));
     }
+
+    [TestMethod()]
+    public void DataManager_10000Students1000CoursesAddSqlServer_Ok()
+    {
+        //arrange
+        const int a = 'а', z = 'я' + 1, min = 2, max = 16;
+
+        string Build(bool course)
+        {
+            var res = new StringBuilder(course ? "Курс: " : string.Empty);
+            for (var i = 0; i < 3; i++)
+            {
+                var len = _r.Next(min, max) + 1;
+                res.Capacity = res.Length + len;
+                for (var j = 0; j < len; j++)
+                {
+                    var c = (char)_r.Next(a, z);
+                    res.Append(j > 0 ? c : c.ToString().ToUpper());
+                }
+                res.Append(' ');
+            }
+            return res.ToString().TrimEnd();
+        }
+        var (studentsRep, coursesRep, _) = DataManager.Get(Provider.SqlServer);
+        //act 
+        for (var i = 0; i < 1000; i++)
+            coursesRep.Add(new Course { Name = Build(true) });
+        for (var i = 0; i < 10000; i++)
+        {
+            var student = new Student { Name = Build(false) };
+            studentsRep.Add(student);
+
+            var count = _r.Next(20) - 10;
+            if (count <= 0) continue;
+            var items = coursesRep.Items.ToList();
+
+            for (int j = 0; j < count; j++)
+            {
+                var course = items
+                    .Skip(_r.Next(items.Count))
+                    .Take(1)
+                    .FirstOrDefault();
+                if (course != null) studentsRep.SetCourse(student, course);
+            }
+        }
+        Assert.IsFalse(false);
+    }
+    [TestMethod()]
+    public void DataManager_10000Students1000CoursesAddSqLite_Ok()
+    {
+        //arrange
+        const int a = 'а', z = 'я' + 1, min = 2, max = 16;
+
+        string Build(bool course)
+        {
+            var res = new StringBuilder(course ? "Курс: " : string.Empty);
+            for (var i = 0; i < 3; i++)
+            {
+                var len = _r.Next(min, max) + 1;
+                res.Capacity = res.Length + len;
+                for (var j = 0; j < len; j++)
+                {
+                    var c = (char)_r.Next(a, z);
+                    res.Append(j > 0 ? c : c.ToString().ToUpper());
+                }
+                res.Append(' ');
+            }
+            return res.ToString().TrimEnd();
+        }
+        var (studentsRep, coursesRep, _) = DataManager.Get(Provider.SqLite);
+        //act 
+        for (var i = 0; i < 50; i++)
+            coursesRep.Add(new Course { Name = Build(true) });
+        for (var i = 0; i < 2000; i++)
+        {
+            var student = new Student { Name = Build(false) };
+            studentsRep.Add(student);
+
+            var count = _r.Next(10);
+            if (count <= 0) continue;
+            var items = coursesRep.Items.ToList();
+
+            for (int j = 0; j < count; j++)
+            {
+                var course = items
+                    .Skip(_r.Next(items.Count))
+                    .Take(1)
+                    .FirstOrDefault();
+                if (course != null) studentsRep.SetCourse(student, course);
+            }
+        }
+        Assert.IsFalse(false);
+    }
+
 }
