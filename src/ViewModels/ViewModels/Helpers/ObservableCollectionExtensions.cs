@@ -1,33 +1,29 @@
 ﻿using System.Collections.ObjectModel;
 using Models;
 using Models.Entities.Proxies;
+using ViewModelBase.Commands.ErrorHandlers;
 
 namespace ViewModels.Helpers;
 
 public static class ObservableCollectionExtensions
 {
-    /// <summary>
-    /// База данных была изменена извне - перегрузите её.
-    /// </summary>
-    private const string SyncErrMsg = MainViewModel.SyncErrMsg;
-
-    public static void Refresh<TProxy>(
-        this ObservableCollection<TProxy>? proxies,
+    public static TProxy Refresh<TProxy>(
+        this ObservableCollection<TProxy> proxies,
         DataManager data,
-        TProxy? proxy) where TProxy : ProxyEntity
+        TProxy? proxy, Action<object?> onSyncException) where TProxy : ProxyEntity
     {
-        if (proxy is null || proxies is null || !proxies.Any())
-            throw new SynchronizationLockException(SyncErrMsg);
+        if (proxy is null || !proxies.Any())
+            throw new SynchronizationDataException(onSyncException);
         var entity = proxy;
         var refreshItem = proxies.FirstOrDefault(p => p.Id == entity.Id);
-        if (refreshItem == default) throw new SynchronizationLockException(SyncErrMsg);
+        if (refreshItem == default) throw new SynchronizationDataException(onSyncException);
 
         ProxyEntity newData = refreshItem switch
         {
             ProxyStudent => new ProxyStudent(data.StudentsRep.GetStudentById(proxy.Id) ??
-                             throw new SynchronizationLockException(SyncErrMsg)),
+                             throw new SynchronizationDataException(onSyncException)),
             ProxyCourse => new ProxyCourse(data.CoursesRep.GetCourseById(proxy.Id) ??
-                            throw new SynchronizationLockException(SyncErrMsg)),
+                            throw new SynchronizationDataException(onSyncException)),
             _ => throw new Exception()
         };
 
@@ -37,6 +33,8 @@ public static class ObservableCollectionExtensions
             proxies[ind] = proxies[ind] with { Name = newData.Name };
         if (proxies[ind].Count != newData.Count) 
             proxies[ind] = proxies[ind] with { Count = newData.Count };
+
+        return proxies[ind];
     }
 
     //public static void SetSelect(this ObservableCollection<ProxyCourse>? courses, Guid id, bool add = true)

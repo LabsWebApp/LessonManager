@@ -26,7 +26,9 @@
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="26"/>
             </Grid.RowDefinitions>
-            <Label Grid.Row="0" HorizontalContentAlignment="Center" FontWeight="Bold">Студенты</Label>
+            <Label Grid.Row="0"  
+                   Style="{StaticResource Subhead}"
+                   />
             <Label Grid.Row="4" HorizontalContentAlignment="Center" FontWeight="Bold">Курсы</Label>
             <controls:MainDataGrid Grid.Row="2"
                                    x:Name="StudentsGrid"
@@ -45,12 +47,13 @@
                     </DataGridTextColumn>
                 </DataGrid.Columns>
             </controls:MainDataGrid>
-            <controls:MainDataGrid Grid.Row="5"
+            <controls:MainDataGrid Grid.Row="6"
                                    x:Name="CoursesGrid"
-                                   Margin="4,26,0,0"
+                                   Margin="4,0,0,0"
+                                   SelectedItem="{Binding SelectedProxyCourse, UpdateSourceTrigger=PropertyChanged}"
                                    SelectionChanged="DataGrid_SelectionChanged"
                                    EnableRowVirtualization="True"
-                                   ItemsSource="{Binding ProxyCourses, UpdateSourceTrigger=PropertyChanged}" Height="210" Grid.RowSpan="2" VerticalAlignment="Top">
+                                   ItemsSource="{Binding ProxyCourses, UpdateSourceTrigger=PropertyChanged}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Курс" Binding="{Binding Name}" Width="*"/>
                     <DataGridTextColumn Header="Студентов на курсе" Binding="{Binding Count}">
@@ -80,16 +83,16 @@
                     <TextBox.InputBindings>
                         <KeyBinding 
                             Key="Return" 
-                            Command="{Binding AsyncStudentCreateCommand}"/>
+                            Command="{Binding StudentCreateAsyncCommand}"/>
                         <KeyBinding 
-                            Key="Enter" 
-                            Command="{Binding AsyncStudentCreateCommand}"/>
+                            Key="Return" 
+                            Command="{Binding StudentCreateAsyncCommand}"/>
                     </TextBox.InputBindings>
                 </TextBox>
                 <Button Grid.Column="2" Margin="4,4,0,4" 
                         Content="Добавить" Height="18" 
                         VerticalAlignment="Top" FontSize="10"
-                        Command="{Binding AsyncStudentCreateCommand}"/>
+                        Command="{Binding StudentCreateAsyncCommand}"/>
 
             </Grid>
             <Grid Grid.Row="3" Grid.Column="0" Margin="4,0,0,0">
@@ -128,10 +131,10 @@
                     <TextBox.InputBindings>
                         <KeyBinding 
                             Key="Return" 
-                            Command="{Binding AsyncCourseCreateCommand}"/>
+                            Command="{Binding CourseCreateAsyncCommand}"/>
                         <KeyBinding 
                             Key="Return" 
-                            Command="{Binding AsyncCourseCreateCommand}"/>
+                            Command="{Binding CourseCreateAsyncCommand}"/>
                     </TextBox.InputBindings>
                 </TextBox>
                 <Button Grid.Column="2" 
@@ -140,7 +143,7 @@
                         Width="{Binding ElementName=FirstButton, Mode=OneWay, Path=Width}"
                         Content="Создать" 
                         VerticalAlignment="Center" FontSize="10"
-                        Command="{Binding AsyncCourseCreateCommand}"/>
+                        Command="{Binding CourseCreateAsyncCommand}"/>
             </Grid>
             <Grid Grid.Row="7" Grid.Column="0"  Margin="4,0,0,0">
                 <Grid.ColumnDefinitions>
@@ -166,7 +169,7 @@
                         Margin="4,4,0,4" 
                         Height="18" VerticalAlignment="Top" FontSize="10"
                         Content="Удалить" 
-                        Command="{Binding AsyncCourseDeleteCommand}"/>
+                        Command="{Binding CourseDeleteAsyncCommand}"/>
             </Grid>
 
         </Grid>
@@ -195,25 +198,25 @@
                     <TextBox.InputBindings>
                         <KeyBinding 
                             Key="Return" 
-                            Command="{Binding AsyncStudentNameChangeCommand}"
+                            Command="{Binding StudentNameChangeAsyncCommand}"
                             CommandParameter="{Binding ChangingStudent}"/>
                         <KeyBinding
                             Key="Enter"
-                            Command="{Binding AsyncStudentNameChangeCommand}"
+                            Command="{Binding StudentNameChangeAsyncCommand}"
                             CommandParameter="{Binding ChangingStudent}"/>
                     </TextBox.InputBindings>
                 </TextBox>
                 <Button Grid.Column="1" Margin="4,4,0,4" 
                         Content="Имя" 
                         Height="18" VerticalAlignment="Top" FontSize="10"
-                        Command="{Binding AsyncStudentNameChangeCommand}"
+                        Command="{Binding StudentNameChangeAsyncCommand}"
                         CommandParameter="{Binding ChangingStudent}"
                         ToolTip="Сменить имя"/>
                 <Button Grid.Column="2" 
                         Margin="4,4,0,4" 
                         Content="Удалить" Height="18" 
                         VerticalAlignment="Top" FontSize="10"
-                        Command="{Binding AsyncStudentDeleteCommand}"/>
+                        Command="{Binding StudentDeleteAsyncCommand}"/>
             </Grid>
             <controls:AdvancedDataGrid Grid.Row="2" Margin="4,0,4,0" 
                       x:Name="OutCoursesGrid"
@@ -225,12 +228,15 @@
                                         Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
                                         Width="*"/>
                 </DataGrid.Columns>
+                <behaviors:Interaction.Behaviors>
+                    <local:DataGridMultiSelectionBehavior SelectedItems="{Binding SelectedProxyCourses, UpdateSourceTrigger=PropertyChanged}"/>
+                </behaviors:Interaction.Behaviors>
             </controls:AdvancedDataGrid>
             <Button Grid.Row="3" Margin="0,4,0,4" 
                     Width="72"
                     Height="{Binding ElementName=FirstButton, Mode=OneWay, Path=Height}"
                     Content="🠗" VerticalContentAlignment="Center" FontSize="10" 
-                    Command="{Binding AsyncSetCoursesCommand}"
+                    Command="{Binding SetCoursesAsyncCommand}"
                     CommandParameter="{Binding ElementName=OutCoursesGrid, Path=SelectedItems}"/>
             <Label Grid.Row="4" HorizontalAlignment="Center">
                 стрелками управляйте записью/отчислением студента в работе на/с курс(а)
@@ -239,7 +245,7 @@
                     Width="72" 
                     Height="{Binding ElementName=FirstButton, Mode=OneWay, Path=Height}"
                     Content="🠕" VerticalContentAlignment="Center" FontSize="10"
-                    Command="{Binding AsyncUnsetCoursesCommand}"
+                    Command="{Binding UnsetCoursesAsyncCommand}"
                     CommandParameter="{Binding ElementName=InCoursesGrid, Path=SelectedItems}"/>
             <controls:AdvancedDataGrid Grid.Row="6" Margin="4,0,4,0"
                                        x:Name="InCoursesGrid"
@@ -251,6 +257,9 @@
                                         Binding="{Binding Name}"
                                         Width="*"/>
                 </DataGrid.Columns>
+                <behaviors:Interaction.Behaviors>
+                    <local:DataGridMultiSelectionBehavior SelectedItems="{Binding SelectedProxyCourses, UpdateSourceTrigger=PropertyChanged}"/>
+                </behaviors:Interaction.Behaviors>
             </controls:AdvancedDataGrid>
             <Grid Grid.Row="7" Margin="0,0,4,0">
                 <Grid.ColumnDefinitions>
@@ -266,7 +275,7 @@
                        ToolTip="{Binding  WeatherToolTipsString}">
                     <Image.InputBindings>
                         <MouseBinding MouseAction="LeftDoubleClick" 
-                                      Command="{Binding AsyncRefreshBonusCommand}"/>
+                                      Command="{Binding RefreshBonusAsyncCommand}"/>
                     </Image.InputBindings>
                 </Image>
                 <Label Grid.Column="2" FontWeight="Bold" Foreground="Navy"
@@ -274,7 +283,7 @@
                        ToolTip="{Binding  WeatherToolTipsString}">
                     <Label.InputBindings>
                         <MouseBinding MouseAction="LeftDoubleClick" 
-                                      Command="{Binding AsyncRefreshBonusCommand}"/>
+                                      Command="{Binding RefreshBonusAsyncCommand}"/>
                     </Label.InputBindings>
                 </Label>
                 <Button Grid.Column="3" 

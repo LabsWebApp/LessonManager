@@ -1,14 +1,15 @@
 ﻿using System.Collections;
-using Models;
-using Models.Entities;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 using ApiKeysData;
 using GetLocation;
+using Models;
 using Models.DataProviders.Helpers;
+using Models.Entities;
 using Models.Entities.Proxies;
 using OpenWeatherMapApi;
 using OpenWeatherMapApi.Infos;
@@ -26,45 +27,42 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
     #region init
     private readonly DataManager _data;
     private const string PatternName = @"^[А-ЯЁ][а-яё]";
-    internal const string SyncErrMsg = @"База данных была изменена извне - перегрузите её.";
     private bool _isBusy;
     private readonly IConfirmed _confirmed;
+    private readonly Action<object?> _onSyncException;
 
-    public IAdvancedSelectedItems<ProxyCourse>? AdvancedInCourses { private get; set; } 
-    public IAdvancedSelectedItems<ProxyCourse>? AdvancedOutCourses { private get; set; } 
-    public ObservableCollection<ProxyEntity> ProxyStudents { get; set; }
-    public ObservableCollection<ProxyCourse> ProxyCourses { get; set; }
-    public ObservableCollection<ProxyCourse>? OutProxyCourses { get; set; }
-    public ObservableCollection<ProxyCourse>? InProxyCourses { get; set; }
-    public IList<ProxyCourse> SelectedProxyCourses { get; }
+    public ObservableCollection<ProxyEntity> ProxyStudents { get; private set; } = new();
+    public ObservableCollection<ProxyCourse> ProxyCourses { get; private set; } = new();
+    public ObservableCollection<ProxyCourse> OutProxyCourses { get; } = new();
+    public ObservableCollection<ProxyCourse> InProxyCourses { get; } = new();
+    public ObservableCollection<ProxyCourse> SelectedProxyCourses { get; set; } = new();
 
     public MainViewModel(Provider provider, IErrorHandler errorHandler, IConfirmed confirmed)
     {
         //_errorHandler = errorHandler;
         _confirmed = confirmed;
         _data = DataManager.Get(provider);
-        ProxyStudents = new ObservableCollection<ProxyEntity>(_data.StudentsRep.ProxyItems);
-        ProxyCourses = new ObservableCollection<ProxyCourse>(_data.CoursesRep.ProxyItems);
-        SelectedProxyCourses = new List<ProxyCourse>();
+        Reloading();
+        _onSyncException = msg => InfoStr = msg?.ToString();
 
-        AsyncStudentCreateCommand = new AsyncCommand(CreateStudentAsync, () => CanCreate(_newStudent), errorHandler);
-        AsyncCourseCreateCommand = new AsyncCommand(CreateCourseAsync, () => CanCreate(_newCourse), errorHandler);
+        StudentCreateAsyncCommand = new AsyncCommand(CreateStudentAsync, () => CanCreate(_newStudent), errorHandler);
+        CourseCreateAsyncCommand = new AsyncCommand(CreateCourseAsync, () => CanCreate(_newCourse), errorHandler);
         StudentFindCommand = new Command(StudentFind,
             () => ProxyStudents.Any() && _findStudent.Trim().Length > 0, errorHandler);
         CourseFindCommand = new Command(CourseFind,
             () => ProxyCourses.Any() && _findCourse.Trim().Length > 0, errorHandler);
-        AsyncStudentDeleteCommand = new AsyncCommand(StudentDeleteAsync, 
+        StudentDeleteAsyncCommand = new AsyncCommand(StudentDeleteAsync, 
             () => !_isBusy && SelectedProxyStudent is not null,errorHandler);
-        AsyncCourseDeleteCommand = new AsyncCommand(CourseDeleteAsync,
+        CourseDeleteAsyncCommand = new AsyncCommand(CourseDeleteAsync,
             () => !_isBusy && SelectedProxyCourse is not null, errorHandler);
-        AsyncSetCoursesCommand = new AsyncCommand<IEnumerable?>(
+        SetCoursesAsyncCommand = new AsyncCommand<IEnumerable?>(
             SetCoursesAsync,
             CanSetUnset, errorHandler);
-        AsyncUnsetCoursesCommand = new AsyncCommand<IEnumerable?>(
+        UnsetCoursesAsyncCommand = new AsyncCommand<IEnumerable?>(
             UnsetCourseAsync,
             CanSetUnset,
             errorHandler);
-        AsyncStudentNameChangeCommand = new AsyncCommand<string>(
+        StudentNameChangeAsyncCommand = new AsyncCommand<string>(
             StudentNameChangeAsync,
             s => 
                 s != null && CanCreate(s) 
@@ -72,11 +70,20 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
                           && SelectedProxyStudent.Name != ChangingStudent?.Trim(),
             errorHandler);
 
-        _asyncBonusCommand = new AsyncCommand(BonusAsync, null, errorHandler, _infoCts.Token);
-        AsyncRefreshBonusCommand = new AsyncCommand(RefreshBonusAsync,
+        _bonusAsyncCommand = new AsyncCommand(BonusAsync, null, errorHandler, _infoCts.Token);
+        RefreshBonusAsyncCommand = new AsyncCommand(RefreshBonusAsync,
             () => _isBonusBusy && !_isRefreshRunning, 
             errorHandler, _infoCts.Token);
         BonusCommand = new Command(Bonus, null, errorHandler);
+
+        SelectedProxyCourses.CollectionChanged += RaiseSetUnsetCanExecuteChanged;
+        //SelectedOutProxyCourses.CollectionChanged += SelectedProxyCourses_CollectionChanged;
+    }
+
+    private void RaiseSetUnsetCanExecuteChanged(object? o = null, NotifyCollectionChangedEventArgs? e = null)
+    {
+        UnsetCoursesAsyncCommand.RaiseCanExecuteChanged();
+        SetCoursesAsyncCommand.RaiseCanExecuteChanged();
     }
 
     private Student? StudentByProxy(ProxyEntity? proxy) =>
@@ -85,8 +92,28 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
         proxy == null ? null : _data.CoursesRep.GetCourseByProxy(proxy);
     #endregion
 
+    #region reloading
+
+    private void Reloading()
+    {
+        ProxyStudents.Clear();
+        ProxyCourses.Clear();
+        ProxyStudents = new ObservableCollection<ProxyEntity>(_data.StudentsRep.ProxyItems);
+        ProxyCourses = new ObservableCollection<ProxyCourse>(_data.CoursesRep.ProxyItems);
+    }
+
+    private string? _infoStr;
+
+    public string? InfoStr
+    {
+        get => _infoStr;
+        set => Set(ref _infoStr, value);
+    }
+
+    #endregion
+
     #region rename
-    public AsyncCommand<string> AsyncStudentNameChangeCommand { get; }
+    public AsyncCommand<string> StudentNameChangeAsyncCommand { get; }
 
     private string? _changingStudent;
     public string? ChangingStudent
@@ -95,7 +122,7 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
         set
         {
             if (Set(ref _changingStudent, value))
-                AsyncStudentNameChangeCommand.RaiseCanExecuteChanged();
+                StudentNameChangeAsyncCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -107,16 +134,15 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
             _isBusy = true;
             ChangingStudent = obj.TrimEnd();
             var student = StudentByProxy(SelectedProxyStudent) ??
-                          throw new SynchronizationLockException(SyncErrMsg);
+                          throw new SynchronizationDataException(_onSyncException);
             var selected = await _data.StudentsRep.RenameAsync(student, ChangingStudent);
-            var proxy = new ProxyStudent(selected ?? throw new SynchronizationLockException(SyncErrMsg));
-            ProxyStudents.Refresh(_data, proxy);
-            SelectedProxyStudent = proxy;
+            var proxy = new ProxyStudent(selected ?? throw new SynchronizationDataException(_onSyncException));
+            SelectedProxyStudent = ProxyStudents.Refresh(_data, proxy, _onSyncException);
         }
         finally
         {
             _isBusy = false;
-            AsyncStudentDeleteCommand.RaiseCanExecuteChanged();
+            StudentDeleteAsyncCommand.RaiseCanExecuteChanged();
         }
     }
     #endregion
@@ -135,7 +161,7 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
         set
         {
             if (Set(ref _newStudent, value))
-                AsyncStudentCreateCommand.RaiseCanExecuteChanged();
+                StudentCreateAsyncCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -144,14 +170,12 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
     {
         set
         {
-            if (Set(ref _newCourse, value))
-            {
-                AsyncCourseCreateCommand.RaiseCanExecuteChanged();
-                SetInOutCourses();
-            }
+            if (!Set(ref _newCourse, value)) return;
+            CourseCreateAsyncCommand.RaiseCanExecuteChanged();
+            SetInOutCourses();
         }
     }
-    public AsyncCommand AsyncStudentCreateCommand { get; }
+    public AsyncCommand StudentCreateAsyncCommand { get; }
     private async Task CreateStudentAsync()
     {
         _isBusy = true;
@@ -169,7 +193,7 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
         }
     }
 
-    public AsyncCommand AsyncCourseCreateCommand { get; }
+    public AsyncCommand CourseCreateAsyncCommand { get; }
     private async Task CreateCourseAsync()
     {
         _isBusy = true;
@@ -234,15 +258,15 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
     #endregion
 
     #region delete
-    public AsyncCommand AsyncStudentDeleteCommand { get; }
-    public AsyncCommand AsyncCourseDeleteCommand { get; }
+    public AsyncCommand StudentDeleteAsyncCommand { get; }
+    public AsyncCommand CourseDeleteAsyncCommand { get; }
 
     private async Task StudentDeleteAsync()
     {
         _isBusy = true;
         try
         {
-            if (_confirmed.Confirm($"Вы действительно хотите отчислит студента: {SelectedProxyStudent?.Name}?"))
+            if (!_confirmed.Confirm($"Вы действительно хотите отчислит студента: {SelectedProxyStudent?.Name}?"))
                 throw new OperationCanceledException("Отчисление отменено.");
 
             var changedCourses = _data.CoursesRep.Items
@@ -265,8 +289,8 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
         }
         finally
         {
-            _isBusy = false;
             SetInOutCourses();
+            _isBusy = false;
         }
     }
     private async Task CourseDeleteAsync()
@@ -274,7 +298,7 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
         _isBusy = true;
         try
         {
-            if (_confirmed.Confirm($"Вы действительно хотите удалить курс: \"{SelectedProxyCourse?.Name}\"?"))
+            if (!_confirmed.Confirm($"Вы действительно хотите удалить курс: \"{SelectedProxyCourse?.Name}\"?"))
                 throw new OperationCanceledException("Удаление отменено.");
 
             var changedStudents = _data.StudentsRep.Items
@@ -284,7 +308,7 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
             {
                 await _data.CoursesRep.DeleteAsync(SelectedProxyCourse.Id);
                 ProxyCourses.Remove(SelectedProxyCourse);
-                SelectedProxyCourses?.Remove(SelectedProxyCourse);
+                SelectedProxyCourses.Remove(SelectedProxyCourse);
                 SelectedProxyCourse = null;
             }
 
@@ -305,11 +329,13 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
     #endregion
 
     #region set
-    public AsyncCommand<IEnumerable?> AsyncSetCoursesCommand { get; }
-    public AsyncCommand<IEnumerable?> AsyncUnsetCoursesCommand { get; }
+    public AsyncCommand<IEnumerable?> SetCoursesAsyncCommand { get; }
+    public AsyncCommand<IEnumerable?> UnsetCoursesAsyncCommand { get; }
 
-    private bool CanSetUnset(IEnumerable? obj) =>
-        !_isBusy && (obj?.Cast<ProxyEntity>().Any() ?? false);
+    private bool CanSetUnset(IEnumerable? obj) => 
+        !_isBusy 
+        && SelectedProxyStudent is not null
+        && (obj?.Cast<ProxyEntity>().Any() ?? false);
 
     private Task SetCoursesAsync(IEnumerable? courses) =>
         SetUnsetCourseAsync(courses, _data.StudentsRep.SetCourseAsync);
@@ -317,7 +343,9 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
     private Task UnsetCourseAsync(IEnumerable? courses) =>
         SetUnsetCourseAsync(courses, _data.StudentsRep.UnsetCourseAsync);
 
-    private async Task SetUnsetCourseAsync(IEnumerable? courses, Func<Student,Course,CancellationToken, Task> setUnset)
+    private async Task SetUnsetCourseAsync(
+        IEnumerable? courses, 
+        Func<Student,Course,CancellationToken, Task> setUnset)
     {
         _isBusy = true;
         try
@@ -327,35 +355,30 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
                         courses?.Cast<ProxyCourse>().ToArray() ??
                         throw new ArgumentNullException(nameof(courses));
             var student = StudentByProxy(SelectedProxyStudent) ??
-                          throw new SynchronizationLockException("SyncErrMsg");
+                          throw new SynchronizationDataException(_onSyncException);
 
             var oldSelectedId = SelectedProxyCourse?.Id;
             SelectedProxyCourses.Clear();
-
-            foreach (var item in items)
+            foreach (var item in items.Reverse())
             {
                 await setUnset(
                     student ??
-                    throw new SynchronizationLockException("SyncErrMsg"),
+                    throw new SynchronizationLockException(),
                     CourseByProxy(item) ??
-                    throw new SynchronizationLockException("SyncErrMsg"),
+                    throw new SynchronizationDataException(_onSyncException),
                     default);
-
-                ProxyCourses.Refresh(_data, item);
+                var result = ProxyCourses.Refresh(_data, item, _onSyncException);
                 if (oldSelectedId is not null && item.Id == oldSelectedId)
-                    SelectedProxyCourse = item;
-                
-                SelectedProxyCourses.Add(
-                    ProxyCourses.First(c => c.Id == item.Id));
+                    SelectedProxyCourse = result;
+                else
+                    SelectedProxyCourses.Add(result);
             }
-            ProxyStudents.Refresh(_data, SelectedProxyStudent);
-            SelectedProxyStudent = new ProxyStudent(student);
+            SelectedProxyStudent = ProxyStudents.Refresh(_data, SelectedProxyStudent, _onSyncException);
         }
         finally
         {
             _isBusy = false;
-            AsyncUnsetCoursesCommand.RaiseCanExecuteChanged();
-            AsyncSetCoursesCommand.RaiseCanExecuteChanged();
+            RaiseSetUnsetCanExecuteChanged();
         }
     }
     #endregion
@@ -368,41 +391,39 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
         set
         {
             if (!Set(ref _selectedProxyStudent, value)) return;
-            //OnPropertyChanged(nameof(ProxyCourses));
             ChangingStudent = value?.Name;
             SetInOutCourses();
-            AdvancedInCourses?.SelectItems(SelectedProxyCourses);
-            AdvancedOutCourses?.SelectItems(SelectedProxyCourses);
-            AsyncStudentDeleteCommand.RaiseCanExecuteChanged();
-            AsyncSetCoursesCommand.RaiseCanExecuteChanged();
-            AsyncUnsetCoursesCommand.RaiseCanExecuteChanged();
+            RaiseSetUnsetCanExecuteChanged();
         }
     }
 
     private void SetInOutCourses()
     {
-        var student = StudentByProxy(SelectedProxyStudent);
-        InProxyCourses = student is null
-            ? null
-            : new ObservableCollection<ProxyCourse>((
-                _data.CoursesRep.Items
-                    .Where(c => c.Students.Contains(student))
-                    .Select(c => new ProxyCourse(c)))
-                .ToList()
-                .OrderBy(c=>c.Id, 
-                    new SelectedComparer<ProxyCourse>(SelectedProxyCourses)));
-        OnPropertyChanged(nameof(InProxyCourses));
+        var buffer = new ProxyCourse[SelectedProxyCourses.Count];
+        SelectedProxyCourses.CopyTo(buffer, 0);
+        SelectedProxyCourses.Clear();
 
-        OutProxyCourses = student is null
-            ? null
-            : new ObservableCollection<ProxyCourse>((
-                    _data.CoursesRep.Items
-                        .Where(c => !c.Students.Contains(student))
-                        .Select(c => new ProxyCourse(c)))
-                .ToList()
-                .OrderBy(c => c.Id,
-                    new SelectedComparer<ProxyCourse>(SelectedProxyCourses)));
-        OnPropertyChanged(nameof(OutProxyCourses));
+        var student = StudentByProxy(SelectedProxyStudent);
+        InProxyCourses.Clear();
+        OutProxyCourses.Clear();
+        if (student is not null)
+        {
+            foreach (var item in _data.CoursesRep.Items
+                         .Where(c => c.Students.Contains(student))
+                         .Select(c => new ProxyCourse(c))
+                         .ToList()
+                         .OrderBy(c => c.Id,
+                             new SelectedComparer<ProxyCourse>(buffer)))
+                InProxyCourses.Add(item);
+            foreach (var item in _data.CoursesRep.Items
+                         .Where(c => !c.Students.Contains(student))
+                         .Select(c => new ProxyCourse(c))
+                         .ToList()
+                         .OrderBy(c => c.Id,
+                             new SelectedComparer<ProxyCourse>(buffer)))
+                OutProxyCourses.Add(item);
+        }
+        foreach (var item in buffer) SelectedProxyCourses.Add(item);
     }
 
     private ProxyCourse? _selectedProxyCourse;
@@ -412,23 +433,25 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
         set
         {
             if (!Set(ref _selectedProxyCourse, value)) return;
-            AsyncCourseDeleteCommand.RaiseCanExecuteChanged();
+            CourseDeleteAsyncCommand.RaiseCanExecuteChanged();
             if (value is null) return;
-
-            if (SelectedProxyCourses.All(c => c.Id != value.Id))
+            if (SelectedProxyStudent is null)
+            {
+                InProxyCourses.Add(value);
+                OutProxyCourses.Add(value);
                 SelectedProxyCourses.Add(value);
-            AdvancedInCourses?.SelectItem(value);
-            AdvancedOutCourses?.SelectItem(value);
-            if (SelectedProxyCourses.Count > 1) 
-                SetInOutCourses();
+                return;
+            }
+            SelectedProxyCourses.Add(value);
+            SetInOutCourses();
         }
     }
     #endregion
 
     #region weather
 
-    private readonly AsyncCommand _asyncBonusCommand;
-    public AsyncCommand AsyncRefreshBonusCommand { get;}
+    private readonly AsyncCommand _bonusAsyncCommand;
+    public AsyncCommand RefreshBonusAsyncCommand { get;}
     public Command BonusCommand { get; }
 
     private CancellationTokenSource _infoCts = new ();
@@ -526,7 +549,7 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
         finally
         {
             _isRefreshRunning = false;
-            AsyncRefreshBonusCommand.RaiseCanExecuteChanged();
+            RefreshBonusAsyncCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -553,7 +576,7 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
     {
         if (!_isBonusBusy)
         {
-            ((ICommand)_asyncBonusCommand).Execute(null);
+            ((ICommand)_bonusAsyncCommand).Execute(null);
             return;
         }
 
@@ -566,8 +589,8 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
         ButtonToolTip = ShowTip;
         _infoCts.Dispose();
         _infoCts = new();
-        AsyncRefreshBonusCommand.ResetCancel(ref _infoCts);
-        _asyncBonusCommand.ResetCancel(ref _infoCts);
+        RefreshBonusAsyncCommand.ResetCancel(ref _infoCts);
+        _bonusAsyncCommand.ResetCancel(ref _infoCts);
     }
 
     private async Task BonusAsync(CancellationToken ct)
@@ -590,7 +613,7 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
                     throw new OperationCanceledException("-1");
                 if (_stopwatch.Elapsed.Minutes < 5 && notFirst) continue;
                 notFirst = true;
-                (AsyncRefreshBonusCommand as ICommand).Execute(null);
+                (RefreshBonusAsyncCommand as ICommand).Execute(null);
             }
         }
         finally
@@ -609,8 +632,8 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
         if (_disposedValue) return;
         if (disposing)
         {
-            AsyncRefreshBonusCommand.Cancel();
-            _asyncBonusCommand.Cancel();
+            RefreshBonusAsyncCommand.Cancel();
+            _bonusAsyncCommand.Cancel();
             _infoCts.Dispose();
             _data.Dispose();
         }

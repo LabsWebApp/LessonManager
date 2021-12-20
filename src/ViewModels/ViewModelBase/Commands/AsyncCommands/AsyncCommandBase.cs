@@ -85,11 +85,6 @@ public abstract class AsyncCommandBase : IDisposable
         InnerCancellationToken = newCancellationTokenSource.Token;
     }
 
-    #region MyRegion
-
-    
-
-    #endregion
     private bool _disposedValue;
     protected virtual void Dispose(bool disposing)
     {
