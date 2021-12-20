@@ -3,10 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 using System.Text;
 using Models.DataProviders.Helpers;
-using Models.DataProviders.SqLite;
-using Models.DataProviders.SqLite.Repositories;
-using Models.DataProviders.SqlServer;
-using Models.DataProviders.SqlServer.Repositories;
 using Models.Entities;
 
 namespace Models.Tests;

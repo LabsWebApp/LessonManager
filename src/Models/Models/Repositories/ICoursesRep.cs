@@ -11,8 +11,5 @@ public interface ICoursesRep
     void Delete(Guid id);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Course? GetCourseById(Guid id);
-    Course? GetCourseByProxy(ProxyEntity proxy) => GetCourseById(proxy.Id);
     Task<Course?> GetCourseByIdAsync(Guid id, CancellationToken cancellationToken = default);
-        
-
 }

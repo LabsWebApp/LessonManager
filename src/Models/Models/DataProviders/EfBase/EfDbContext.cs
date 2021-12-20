@@ -2,7 +2,6 @@
 
 public abstract class EfDbContext : DbContext
 {
-    protected EfDbContext() => Database.EnsureCreated();
     public DbSet<Student> Students { get; set; } = null!;
     public DbSet<Course> Courses { get; set; } = null!;
     protected override void OnModelCreating(ModelBuilder mb)

@@ -13,7 +13,6 @@ public interface IStudentsRep
     Student? Rename(Student student, string name);
     Task<Student?> RenameAsync(Student student, string name, CancellationToken cancellationToken = default);
     Student? GetStudentById(Guid id);
-    Student? GetStudentByProxy(ProxyEntity proxy) => GetStudentById(proxy.Id);
     Task<Student?> GetStudentByIdAsync(Guid id, CancellationToken cancellationToken = default);
     void SetCourse(Student student, Course course);
     Task SetCourseAsync(Student student, Course course, CancellationToken cancellationToken = default);

@@ -10,6 +10,12 @@ public static class Utilities
         {
             await task;
         }
+        catch (WarningException ex)
+        {
+            if (handler is IWarningHandler warningHandler)
+                warningHandler.WarningHandle(ex);
+            else handler?.HandleError(ex);
+        }
         catch (OperationCanceledException ex)
         {
             if (handler is IErrorCancelHandler handlerWithCancel)
@@ -33,6 +39,12 @@ public static class Utilities
         try
         {
             action.Invoke();
+        }
+        catch (WarningException ex)
+        {
+            if (handler is IWarningHandler warningHandler)
+                warningHandler.WarningHandle(ex);
+            else handler?.HandleError(ex);
         }
         catch (ResultNotFoundException ex)
         {

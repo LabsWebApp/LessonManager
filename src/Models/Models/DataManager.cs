@@ -16,11 +16,13 @@ public record DataManager(IStudentsRep StudentsRep, ICoursesRep CoursesRep, Prov
         {
             case Provider.SqLite:
                 var liteContext = new SqLiteDbContext();
+                liteContext.Database.EnsureCreated();
                 return new(new SqLiteStudents(liteContext),
                     new SqLiteCourses(liteContext), Provider.SqLite) 
                     { Context = liteContext };
             case Provider.SqlServer:
                 var serverContext = new SqlSerDbContext();
+                serverContext.Database.EnsureCreated();
                 return new(new SqlServerStudents(serverContext), 
                     new SqlServerCourses(serverContext), Provider.SqlServer)
                     { Context = serverContext };

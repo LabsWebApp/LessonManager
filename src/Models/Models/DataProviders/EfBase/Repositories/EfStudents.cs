@@ -76,7 +76,8 @@ public abstract class EfStudents : EfDisposable, IStudentsRep
 
     public Student? Rename(Student student, string name)
     {
-        var result = Context.Students.FirstOrDefault(s => s.Id == student.Id);
+        var result = Context
+            .Students.FirstOrDefault(s => s.Id == student.Id);
         if (result == null) throw new ArgumentException("Такого студента не существует");
         if (student.Name != name)
         {
@@ -90,7 +91,10 @@ public abstract class EfStudents : EfDisposable, IStudentsRep
     }
     public async Task<Student?> RenameAsync(Student student, string name, CancellationToken cancellationToken = default)
     {
-        var result = await Context.Students.FirstOrDefaultAsync(s => s.Id == student.Id, cancellationToken);
+        var result = await Context
+            .Students
+            .FirstOrDefaultAsync(
+                s => s.Id == student.Id, cancellationToken);
         if (result == null) return null;
         if (student.Name != name)
         {
@@ -106,8 +110,10 @@ public abstract class EfStudents : EfDisposable, IStudentsRep
     public Student? GetStudentById(Guid id) =>
         Context.Students.FirstOrDefault(s => s.Id == id);
 
-    public Task<Student?> GetStudentByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
-        Context.Students.FirstOrDefaultAsync(s => s.Id == id,cancellationToken);
+    public async Task<Student?> GetStudentByIdAsync(Guid id,
+        CancellationToken cancellationToken = default) =>
+        await Context.Students.FirstOrDefaultAsync(s => s.Id == id,
+            cancellationToken);
 
     public void SetCourse(Student student, Course course)
     {

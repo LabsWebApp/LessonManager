@@ -7,6 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DevData\**" />
+    <Compile Remove="_DevData\**" />
+    <EmbeddedResource Remove="DevData\**" />
+    <EmbeddedResource Remove="_DevData\**" />
+    <None Remove="DevData\**" />
+    <None Remove="_DevData\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.0">
       <PrivateAssets>all</PrivateAssets>

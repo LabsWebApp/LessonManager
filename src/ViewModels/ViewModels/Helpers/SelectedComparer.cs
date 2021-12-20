@@ -1,5 +1,4 @@
-﻿using Models.Entities;
-using Models.Entities.Proxies;
+﻿using Models.Entities.Proxies;
 
 namespace ViewModels.Helpers;
 
