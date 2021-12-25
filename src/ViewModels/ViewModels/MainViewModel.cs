@@ -255,6 +255,26 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
     }
     #endregion
 
+    #region reloading
+
+    private void Reloading()
+    {
+        ProxyStudents.Clear();
+        ProxyCourses.Clear();
+        ProxyStudents = new ObservableCollection<ProxyEntity>(_data.StudentsRep.ProxyItems);
+        ProxyCourses = new ObservableCollection<ProxyCourse>(_data.CoursesRep.ProxyItems);
+    }
+
+    private string? _infoStr;
+
+    public string? InfoStr
+    {
+        get => _infoStr;
+        set => Set(ref _infoStr, value);
+    }
+
+    #endregion
+
     #region rename
     public AsyncCommand<string> StudentNameChangeAsyncCommand { get; }
 
@@ -435,6 +455,7 @@ public class MainViewModel : ViewModelBase.ViewModelBase, IDisposable
         {
             IsBusy = false;
             SetInOutCourses();
+            _isBusy = false;
         }
     }
     private async Task CourseDeleteAsync()
